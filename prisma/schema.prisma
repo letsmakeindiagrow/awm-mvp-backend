@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum VerificationStatus {
+  PENDING
+  IN_PROGRESS
+  VERIFIED
+  REJECTED
+}
+
+model User {
+  id                String            @id @default(uuid())
+  referralCode      String?           @unique
+  mobileNumber      String            @unique
+  mobileVerified    Boolean           @default(false)
+  email             String            @unique
+  emailVerified     Boolean           @default(false)
+  firstName         String
+  lastName          String
+  dateOfBirth       DateTime
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  address           Address?
+  identityDetails   IdentityDetails?
+  bankDetails       BankDetails?
+  verificationState VerificationStatus @default(PENDING)
+}
+
+model IdentityDetails {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id])
+  panNumber       String   @unique
+  panAttachment   String   // URL to stored document
+  aadharNumber    String   @unique
+  aadharFront     String   // URL to stored document
+  aadharBack      String   // URL to stored document
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Address {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  line1     String
+  line2     String?
+  city      String
+  pincode   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BankDetails {
+  id                String   @id @default(uuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id])
+  accountNumber    String   @unique
+  ifscCode         String
+  branchName       String
+  proofAttachment  String   // URL to stored document
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
