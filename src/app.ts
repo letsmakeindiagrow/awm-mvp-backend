@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import authRoutes from "./routes/auth.routes";
+import authRoutes from "./routes/auth.routes.js";
 
 dotenv.config();
 
@@ -11,7 +11,7 @@ app.use(express.json());
 
 app.use("/api/v1/auth", authRoutes);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

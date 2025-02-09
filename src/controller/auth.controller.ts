@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { RegisterUserDto } from "../validation/auth.validation";
+import { RegisterUserDto } from "../validation/auth.validation.js";
 
 const prisma = new PrismaClient();
 
