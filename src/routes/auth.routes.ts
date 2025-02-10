@@ -10,5 +10,6 @@ router.post(
   validateRequest(registerUserSchema),
   AuthController.register
 );
+router.post("/verify-otp", AuthController.verifyEmailOTP);
 
 export default router;

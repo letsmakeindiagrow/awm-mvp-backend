@@ -1,0 +1,18 @@
+-- CreateEnum
+CREATE TYPE "OTPType" AS ENUM ('EMAIL_VERIFICATION', 'MOBILE_VERIFICATION');
+
+-- CreateTable
+CREATE TABLE "OTP" (
+    "userId" TEXT NOT NULL,
+    "type" "OTPType" NOT NULL,
+    "code" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "verified" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "OTP_userId_key" ON "OTP"("userId");
+
+-- AddForeignKey
+ALTER TABLE "OTP" ADD CONSTRAINT "OTP_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

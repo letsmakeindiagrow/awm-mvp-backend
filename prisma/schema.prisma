@@ -36,6 +36,7 @@ model User {
   identityDetails   IdentityDetails?
   bankDetails       BankDetails?
   verificationState VerificationStatus @default(PENDING)
+  otps              OTP[]
 }
 
 model IdentityDetails {
@@ -73,4 +74,20 @@ model BankDetails {
   proofAttachment  String   // URL to stored document
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+}
+
+model OTP {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  type      OTPType
+  code      String
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+enum OTPType {
+  EMAIL_VERIFICATION
+  MOBILE_VERIFICATION
 }

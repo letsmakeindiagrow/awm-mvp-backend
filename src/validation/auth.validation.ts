@@ -35,6 +35,5 @@ export const registerUserSchema = z.object({
     })
     .optional(),
 });
-
 // 🔹 Infer Type from Zod Schema
 export type RegisterUserDto = z.infer<typeof registerUserSchema>;
