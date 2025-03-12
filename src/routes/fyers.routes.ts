@@ -9,7 +9,7 @@ function generateHash(appId: string, appSecret: string) {
   return crypto.createHash("sha256").update(data).digest("hex");
 }
 
-router.post("/callback", (req, res) => {
+router.get("/callback", (req, res) => {
   const { auth_code, state } = req.query;
   res.redirect(
     `https://awm-mvp-frontend.onrender.com/fyers?auth_code=${auth_code}`
