@@ -11,7 +11,9 @@ function generateHash(appId: string, appSecret: string) {
 
 router.post("/callback", (req, res) => {
   const { auth_code, state } = req.query;
-  res.redirect(`http://localhost:3000/fyers?auth_code=${auth_code}`);
+  res.redirect(
+    `https://awm-mvp-frontend.onrender.com/fyers?auth_code=${auth_code}`
+  );
 });
 
 router.post("/getToken", async (req, res: any) => {
