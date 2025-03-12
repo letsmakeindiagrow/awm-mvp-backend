@@ -15,7 +15,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/v1/auth", authRoutes);
-app.use("api/v1/fyers", fyer);
+app.use("/api/v1/fyers", fyer);
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
