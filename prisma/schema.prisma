@@ -20,6 +20,23 @@ enum VerificationStatus {
   REJECTED
 }
 
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+}
+
+enum TransactionMethod {
+  UPI
+  NEFT
+}
+
+enum TransactionStatus {
+  PENDING   // Transaction initiated but not confirmed/processed
+  COMPLETED // Transaction successfully processed (funds are considered moved)
+  FAILED    // Transaction failed
+  CANCELLED // Transaction cancelled by user or system
+}
+
 model User {
   id                String            @id @default(uuid())
   referralCode      String?           @unique
@@ -37,6 +54,7 @@ model User {
   bankDetails       BankDetails?
   verificationState VerificationStatus @default(PENDING)
   otps              OTP[]
+  fundTransactions  FundTransaction[]
 }
 
 model IdentityDetails {
@@ -74,6 +92,7 @@ model BankDetails {
   proofAttachment  String   // URL to stored document
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+  withdrawals      FundTransaction[]
 }
 
 model OTP {
@@ -90,4 +109,21 @@ model OTP {
 enum OTPType {
   EMAIL_VERIFICATION
   MOBILE_VERIFICATION
+}
+
+model FundTransaction {
+  id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  type            TransactionType  
+  method          TransactionMethod
+  amount          Decimal          
+  status          TransactionStatus @default(PENDING) 
+  referenceNumber Int?      
+  bankDetailsId   String?         
+  bankDetails     BankDetails?     @relation(fields: [bankDetailsId], references: [id])
+  remark          String?         
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
 }

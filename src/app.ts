@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.routes.js";
 import fyer from "./routes/fyers.routes.js";
+import investor from "./routes/investor.routes.js";
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/fyers", fyer);
+app.use("/api/v1/investor", investor);
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
