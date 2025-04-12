@@ -4,6 +4,7 @@ export const registerUserSchema = z.object({
   referralCode: z.string().optional(),
   mobileNumber: z.string().min(10, "Mobile number must be 10 digits"),
   email: z.string().email("Invalid email format"),
+  password: z.string(),
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   dateOfBirth: z.coerce.date(), // Converts input string to Date

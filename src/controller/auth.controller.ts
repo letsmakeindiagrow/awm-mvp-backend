@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 import { RegisterUserDto } from "../validation/auth.validation.js";
 import { OTPService } from "../services/otpService.js";
 
@@ -29,8 +30,8 @@ export class AuthController {
       }
 
       // Hash the password
-      // const saltRounds = 10;
-      // const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
 
       // Create user with base information first
       const user = await prisma.user.create({
@@ -41,7 +42,7 @@ export class AuthController {
           firstName: userData.firstName,
           lastName: userData.lastName,
           dateOfBirth: userData.dateOfBirth,
-          // password: hashedPassword, // Store hashed password
+          password: hashedPassword, // Store hashed password
           verificationState: "PENDING",
           mobileVerified: false,
           emailVerified: false,
@@ -79,9 +80,13 @@ export class AuthController {
       }
 
       // Generate JWT
-      const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
-        expiresIn: "24h",
-      });
+      const token = jwt.sign(
+        { userId: user.id, password: user.password },
+        process.env.JWT_SECRET!,
+        {
+          expiresIn: "24h",
+        }
+      );
 
       // Automatically send email verification OTP
       await OTPService.sendEmailVerificationOTP(user.id);
