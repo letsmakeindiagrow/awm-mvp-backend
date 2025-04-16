@@ -36,5 +36,18 @@ export const registerUserSchema = z.object({
     })
     .optional(),
 });
+
+export const jwtPayload = z.object({
+  userId: z.string(),
+  email: z.string().email(),
+});
+
+export const loginSchema = z.object({
+  email: z.string(),
+  password: z.string(),
+});
+
 // 🔹 Infer Type from Zod Schema
 export type RegisterUserDto = z.infer<typeof registerUserSchema>;
+export type jwtPayloadType = z.infer<typeof jwtPayload>;
+export type loginSchemaType = z.infer<typeof loginSchema>;

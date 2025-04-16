@@ -7,7 +7,6 @@ import {
 import {
   addFundType,
   withdrawFundType,
-  TransactionTypes,
 } from "../validation/funds.validation.js";
 
 const prisma = new PrismaClient();

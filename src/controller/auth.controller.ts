@@ -2,10 +2,25 @@ import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import { RegisterUserDto } from "../validation/auth.validation.js";
+import {
+  loginSchemaType,
+  RegisterUserDto,
+} from "../validation/auth.validation.js";
 import { OTPService } from "../services/otpService.js";
 
 const prisma = new PrismaClient();
+const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN; // Define COOKIE_DOMAIN from environment variables
+const COOKIE_NAME = process.env.COOKIE_NAME; // Define COOKIE_NAME from environment variables
+
+if (!COOKIE_DOMAIN) {
+  // console.error("Error: COOKIE_DOMAIN environment variable is not set.");
+  throw new Error("FATAL: COOKIE_DOMAIN environment variable is not set.");
+}
+
+if (!COOKIE_NAME) {
+  // console.error("Error: COOKIE_NAME environment variable is not set.");
+  throw new Error("FATAL: COOKIE_NAME environment variable is not set.");
+}
 
 export class AuthController {
   static async register(req: Request, res: Response): Promise<void> {
@@ -81,19 +96,28 @@ export class AuthController {
 
       // Generate JWT
       const token = jwt.sign(
-        { userId: user.id, password: user.password },
+        { userId: user.id, email: user.email },
         process.env.JWT_SECRET!,
         {
-          expiresIn: "24h",
+          expiresIn: "10h",
         }
       );
+      console.log("Setting cookie with options:", `${COOKIE_DOMAIN}`);
+      console.log(`DEBUG: Using COOKIE_NAME = '${COOKIE_NAME}'`); // Added for debugging
+      res.cookie(COOKIE_NAME!, token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax",
+        domain: COOKIE_DOMAIN, // Crucial: Set correct domain
+        path: "/",
+        maxAge: 10 * 60 * 60 * 1000, // 10 hours
+      });
 
       // Automatically send email verification OTP
       await OTPService.sendEmailVerificationOTP(user.id);
 
       res.status(201).json({
         message: "Registration successful. Please verify your email.",
-        token,
         user: {
           id: user.id,
           email: user.email,
@@ -134,6 +158,72 @@ export class AuthController {
     } catch (error) {
       console.error("Email OTP verification error:", error);
       res.status(500).json({ message: "Verification failed" });
+    }
+  }
+  static async login(req: Request, res: Response): Promise<void> {
+    try {
+      const creds: loginSchemaType = req.body;
+
+      const user = await prisma.user.findFirst({
+        where: {
+          email: {
+            equals: creds.email,
+            mode: "insensitive",
+          },
+        },
+      });
+
+      if (!user) {
+        res.status(400).json({
+          message: "user not found",
+        });
+        return;
+      }
+
+      const isPasswordValid = await bcrypt.compare(
+        creds.password,
+        user.password
+      );
+
+      if (!isPasswordValid) {
+        res.status(400).json({
+          message: "invalid email or password",
+        });
+        return;
+      }
+      if (!process.env.JWT_SECRET) {
+        res.status(400).json({
+          message: "JWT Secret not defined",
+        });
+        return;
+      }
+
+      const token = jwt.sign(
+        { userId: user.id, email: user.email },
+        process.env.JWT_SECRET as string,
+        {
+          expiresIn: "10h",
+        }
+      );
+
+      res.cookie(COOKIE_NAME!, token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax",
+        domain: COOKIE_DOMAIN,
+        maxAge: 10 * 60 * 60 * 1000, // 10 hours
+      });
+
+      res.status(200).json({
+        message: "Login successful",
+        user: {
+          id: user.id,
+          email: user.email,
+        },
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   }
 }

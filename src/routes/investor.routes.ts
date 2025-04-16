@@ -5,8 +5,10 @@ import {
   withdrawFundsSchema,
 } from "../validation/funds.validation.js";
 import { FundsController } from "../controller/funds.controller.js";
+import { verifyRequest } from "../middleware/jwt.middleware.js";
 
 const router = express.Router();
+router.use(verifyRequest);
 
 router.post(
   "/addFunds",
