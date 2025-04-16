@@ -1,0 +1,1 @@
+{"root":["./src/app.ts","./src/config/env.config.ts","./src/controller/auth.controller.ts","./src/middleware/validaterequest.ts","./src/routes/auth.routes.ts","./src/services/otpservice.ts","./src/services/sendconfirmationemail.ts","./src/validation/auth.validation.ts"],"version":"5.7.3"}
