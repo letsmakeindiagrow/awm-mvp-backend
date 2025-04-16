@@ -107,7 +107,7 @@ export class AuthController {
       res.cookie(COOKIE_NAME!, token, {
         httpOnly: true,
         secure: true,
-        sameSite: "lax",
+        sameSite: "none",
         domain: COOKIE_DOMAIN, // Crucial: Set correct domain
         path: "/",
         maxAge: 10 * 60 * 60 * 1000, // 10 hours
@@ -209,7 +209,7 @@ export class AuthController {
       res.cookie(COOKIE_NAME!, token, {
         httpOnly: true,
         secure: true,
-        sameSite: "lax",
+        sameSite: "none",
         domain: COOKIE_DOMAIN,
         maxAge: 10 * 60 * 60 * 1000, // 10 hours
       });
