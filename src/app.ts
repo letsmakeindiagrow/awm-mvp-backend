@@ -5,13 +5,14 @@ import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.routes.js";
 import fyer from "./routes/fyers.routes.js";
 import investor from "./routes/investor.routes.js";
-
+import uploadRoute from "./routes/upload.route.js";
 dotenv.config();
 
 const allowedOrigins = [
   "https://login.aadyanviwealth.com",
   "https://investor.aadyanviwealth.com",
   "https://www.aadyanviwealth.com",
+  "http://localhost:5173",
 ];
 
 const app = express();
@@ -38,6 +39,7 @@ app.get("/", (req, res) => {
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/fyers", fyer);
 app.use("/api/v1/investor", investor);
+app.use("/api/v1/documents", uploadRoute);
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
