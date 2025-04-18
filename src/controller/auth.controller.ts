@@ -210,7 +210,8 @@ export class AuthController {
         httpOnly: true,
         secure: true,
         sameSite: "none",
-        domain: COOKIE_DOMAIN,
+        domain: COOKIE_DOMAIN, // Crucial: Set correct domain
+        path: "/",
         maxAge: 10 * 60 * 60 * 1000, // 10 hours
       });
 
