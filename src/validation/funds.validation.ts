@@ -1,6 +1,5 @@
 import { z } from "zod";
 export const addFundsSchema = z.object({
-  userId: z.string(),
   paymentMethod: z.enum(["NEFT", "UPI"]),
   amount: z.number(),
   referenceNumber: z.string(),
@@ -8,7 +7,6 @@ export const addFundsSchema = z.object({
 });
 
 export const withdrawFundsSchema = z.object({
-  userId: z.string(),
   amount: z.number(),
 });
 

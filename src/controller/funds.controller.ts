@@ -37,10 +37,14 @@ export class FundsController {
   }
   static async withdrawFunds(req: Request, res: Response): Promise<void> {
     try {
+      if (!req.user?.userId) {
+        res.status(401).json({ message: "Unauthorized: User ID is required" });
+        return;
+      }
       const payload: withdrawFundType = req.body;
       await prisma.fundTransaction.create({
         data: {
-          userId: payload.userId,
+          userId: req.user?.userId,
           amount: payload.amount,
           type: TransactionType.WITHDRAWAL,
           method: TransactionMethod.NEFT,
