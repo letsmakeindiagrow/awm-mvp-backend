@@ -15,7 +15,7 @@ export const verifyRequest = async (
 ): Promise<void> => {
   const JWT_SECRET = process.env.JWT_SECRET;
   try {
-    const token = req.cookies.token; // <-- GET TOKEN FROM COOKIE
+    const token = req.cookies.auth_token; // <-- GET TOKEN FROM COOKIE
 
     if (!token) {
       res.status(401).json({ message: "Unauthorized: Token is missing" });
