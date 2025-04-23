@@ -22,6 +22,6 @@ router.post(
   FundsController.withdrawFunds
 );
 
-router.get("/getTransactions/:userId", FundsController.getTransactions);
+router.get("/getTransactions", FundsController.getTransactions);
 
 export default router;

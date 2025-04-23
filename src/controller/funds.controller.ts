@@ -3,6 +3,7 @@ import {
   PrismaClient,
   TransactionMethod,
   TransactionType,
+  TransactionStatus,
 } from "@prisma/client";
 import {
   addFundType,
@@ -58,16 +59,15 @@ export class FundsController {
   }
   static async getTransactions(req: Request, res: Response): Promise<void> {
     try {
-      const { userId } = req.params;
-
-      if (!userId) {
-        res.status(400).json({ message: "User ID is required." });
+      if (!req.user?.userId) {
+        res.status(401).json({ message: "Unauthorized: User ID is required" });
         return;
       }
 
       const transactions = await prisma.fundTransaction.findMany({
         where: {
-          userId: userId,
+          userId: req.user?.userId,
+          status: TransactionStatus.COMPLETED,
         },
         select: {
           id: true,
