@@ -4,6 +4,7 @@ import {
   PrismaClient,
   TransactionStatus,
   TransactionType,
+  VerificationStatus,
 } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -40,7 +41,7 @@ export class AdminController {
   static async addFunds(req: Request, res: Response): Promise<void> {
     try {
       const { transactionsId, status } = req.body;
-      if (status === "approved") {
+      if (status === "approve") {
         await prisma.fundTransaction.update({
           where: {
             id: transactionsId,
@@ -116,6 +117,51 @@ export class AdminController {
       res.status(200).json({ transactions });
     } catch (error) {
       console.error("Error in AdminController.getTransactions:", error);
+      res.status(500).json({ message: "Internal server error" });
+      return;
+    }
+  }
+  static async getUsers(req: Request, res: Response): Promise<void> {
+    try {
+      const users = await prisma.user.findMany();
+      res.status(200).json({ users });
+    } catch (error) {
+      console.error("Error in AdminController.getUsers:", error);
+      res.status(500).json({ message: "Internal server error" });
+      return;
+    }
+  }
+  static async verifyUser(req: Request, res: Response): Promise<void> {
+    try {
+      const { userId, status } = req.body;
+      if (status === "approve") {
+        await prisma.user.update({
+          where: {
+            id: userId,
+          },
+          data: {
+            verificationState: VerificationStatus.VERIFIED,
+          },
+        });
+
+        res.status(200).json({
+          message: "user approved",
+        });
+      } else {
+        await prisma.user.update({
+          where: {
+            id: userId,
+          },
+          data: {
+            verificationState: VerificationStatus.REJECTED,
+          },
+        });
+        res.status(200).json({
+          message: "user rejected",
+        });
+      }
+    } catch (error) {
+      console.error("Error in AdminController.verifyUser:", error);
       res.status(500).json({ message: "Internal server error" });
       return;
     }
