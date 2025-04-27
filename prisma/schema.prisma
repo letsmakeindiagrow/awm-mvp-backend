@@ -32,9 +32,8 @@ enum TransactionMethod {
 
 enum TransactionStatus {
   PENDING   // Transaction initiated but not confirmed/processed
-  COMPLETED // Transaction successfully processed (funds are considered moved)
-  FAILED    // Transaction failed
-  CANCELLED // Transaction cancelled by user or system
+  APPROVED // Transaction successfully processed (funds are considered moved)
+  REJECTED // Transaction cancelled by user or system
 }
 
 model User {

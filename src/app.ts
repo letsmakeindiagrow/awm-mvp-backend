@@ -6,6 +6,7 @@ import authRoutes from "./routes/auth.routes.js";
 import fyer from "./routes/fyers.routes.js";
 import investor from "./routes/investor.routes.js";
 import uploadRoute from "./routes/upload.route.js";
+import adminRoutes from "./routes/admin.routes.js";
 dotenv.config();
 
 const allowedOrigins = [
@@ -40,6 +41,7 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/fyers", fyer);
 app.use("/api/v1/investor", investor);
 app.use("/api/v1/documents", uploadRoute);
+app.use("/api/v1/admin", adminRoutes);
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {

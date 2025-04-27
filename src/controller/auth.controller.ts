@@ -13,12 +13,10 @@ const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN; // Define COOKIE_DOMAIN from en
 const COOKIE_NAME = process.env.COOKIE_NAME; // Define COOKIE_NAME from environment variables
 
 if (!COOKIE_DOMAIN) {
-  // console.error("Error: COOKIE_DOMAIN environment variable is not set.");
   throw new Error("FATAL: COOKIE_DOMAIN environment variable is not set.");
 }
 
 if (!COOKIE_NAME) {
-  // console.error("Error: COOKIE_NAME environment variable is not set.");
   throw new Error("FATAL: COOKIE_NAME environment variable is not set.");
 }
 
