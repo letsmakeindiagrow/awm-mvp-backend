@@ -6,6 +6,7 @@ import {
   TransactionType,
   VerificationStatus,
 } from "@prisma/client";
+import { createInvestmentPlanSchemaType } from "../validation/admin.validation.js";
 
 const prisma = new PrismaClient();
 
@@ -123,7 +124,13 @@ export class AdminController {
   }
   static async getUsers(req: Request, res: Response): Promise<void> {
     try {
-      const users = await prisma.user.findMany();
+      const users = await prisma.user.findMany({
+        select: {
+          id: true,
+          verificationState: true,
+          createdAt: true,
+        },
+      });
       res.status(200).json({ users });
     } catch (error) {
       console.error("Error in AdminController.getUsers:", error);
@@ -131,6 +138,20 @@ export class AdminController {
       return;
     }
   }
+  static async getUserById(req: Request, res: Response): Promise<void> {
+    try {
+      const { userId } = req.params;
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+      res.status(200).json({ user });
+    } catch (error) {
+      console.error("Error in AdminController.getUserById:", error);
+      res.status(500).json({ message: "Internal server error" });
+      return;
+    }
+  }
+
   static async verifyUser(req: Request, res: Response): Promise<void> {
     try {
       const { userId, status } = req.body;
@@ -162,6 +183,40 @@ export class AdminController {
       }
     } catch (error) {
       console.error("Error in AdminController.verifyUser:", error);
+      res.status(500).json({ message: "Internal server error" });
+      return;
+    }
+  }
+  static async createInvestmentPlan(
+    req: Request,
+    res: Response
+  ): Promise<void> {
+    try {
+      const ResponsePayload: createInvestmentPlanSchemaType = req.body;
+      const totalGain =
+        ResponsePayload.minInvestment *
+        ResponsePayload.roiAAR *
+        ResponsePayload.investmentTerm;
+      const maturityValue = ResponsePayload.minInvestment + totalGain;
+      const investmentPlan = await prisma.investmentPlan.create({
+        data: {
+          name: ResponsePayload.name,
+          roiAAR: ResponsePayload.roiAAR,
+          roiAMR: ResponsePayload.roiAMR,
+          minInvestment: ResponsePayload.minInvestment,
+          investmentTerm: ResponsePayload.investmentTerm,
+          totalGain: totalGain,
+          maturityValue: maturityValue,
+          status: ResponsePayload.status,
+          type: ResponsePayload.type,
+        },
+      });
+      res.status(200).json({
+        message: "Investment plan created successfully",
+        investmentPlan,
+      });
+    } catch (error) {
+      console.error("Error in AdminController.createInvestmentPlan:", error);
       res.status(500).json({ message: "Internal server error" });
       return;
     }

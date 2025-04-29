@@ -20,6 +20,16 @@ enum VerificationStatus {
   REJECTED
 }
 
+enum ProductStatus {
+  ACTIVE
+  DEACTIVATED
+}
+
+enum ProductType {
+  SIP
+  LUMPSUM
+}
+
 enum TransactionType {
   DEPOSIT
   WITHDRAWAL
@@ -126,4 +136,19 @@ model FundTransaction {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
+}
+
+model InvestmentPlan {
+  id                 String        @id @default(uuid())
+  name               String        // Product Name (Admin Input)
+  roiAAR             Decimal       // Annual ROI (Admin Input)
+  roiAMR             Decimal       // Monthly ROI = roiAAR / 12
+  minInvestment      Decimal       // Minimum Investment (Admin Input)
+  investmentTerm     Int           // Term in Years (Admin Input)
+  totalGain          Decimal       // Calculated: minInvestment * roiAAR * investmentTerm
+  maturityValue      Decimal       // Calculated: minInvestment + totalGain
+  status             ProductStatus @default(ACTIVE)
+  type               ProductType
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 }

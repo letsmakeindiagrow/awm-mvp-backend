@@ -10,4 +10,5 @@ router.post("/withdraw-funds", verifyRequest, AdminController.withdrawFunds);
 router.get("/get-transactions", verifyRequest, AdminController.getTransactions);
 router.get("/get-users", verifyRequest, AdminController.getUsers);
 router.post("/verify-user", verifyRequest, AdminController.verifyUser);
+router.get("/get-user/:userId", verifyRequest, AdminController.getUserById);
 export default router;
