@@ -25,6 +25,23 @@ enum ProductStatus {
   DEACTIVATED
 }
 
+enum InvestmentMode {
+  SIP
+  LUMPSUM
+}
+
+enum WithdrawalFrequency {
+  QUARTERLY
+  ANNUAL
+  MATURITY
+}
+
+enum UserInvestmentStatus {
+  ACTIVE
+  MATURED
+  WITHDRAWN
+}
+
 enum ProductType {
   SIP
   LUMPSUM
@@ -65,7 +82,10 @@ model User {
   verificationState VerificationStatus @default(PENDING)
   otps              OTP[]
   fundTransactions  FundTransaction[]
+  investments       UserInvestment[]
+  availableBalance  Decimal           @default(0) 
 }
+
 
 model IdentityDetails {
   id              String   @id @default(uuid())
@@ -151,4 +171,24 @@ model InvestmentPlan {
   type               ProductType
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
+  investments        UserInvestment[]
+}
+
+model UserInvestment {
+  id                 String               @id @default(cuid())
+  investedAmount     Float                // Consider using Decimal for financial precision
+  investmentDate     DateTime             @default(now())
+  maturityDate       DateTime             // Calculated on creation
+  investmentMode     InvestmentMode       // Reflects this specific investment's mode
+  withdrawalFrequency WithdrawalFrequency // User's choice for this investment
+  status             UserInvestmentStatus @default(ACTIVE)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  userId             String
+  user               User                 @relation(fields: [userId], references: [id])
+  investmentPlanId   String
+  investmentPlan     InvestmentPlan       @relation(fields: [investmentPlanId], references: [id])
+
+  @@index([userId])
+  @@index([investmentPlanId])
 }

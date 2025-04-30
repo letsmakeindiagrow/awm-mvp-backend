@@ -6,7 +6,8 @@ import {
 } from "../validation/funds.validation.js";
 import { FundsController } from "../controller/funds.controller.js";
 import { verifyRequest } from "../middleware/jwt.middleware.js";
-
+import { subscribeInvestmentSchema } from "../validation/investment.validation.js";
+import { InvestmentController } from "../controller/investment.controller.js";
 const router = express.Router();
 router.use(verifyRequest);
 
@@ -21,6 +22,14 @@ router.post(
   validateRequest(withdrawFundsSchema),
   FundsController.withdrawFunds
 );
+
+router.post(
+  "/subscribeInvestment",
+  validateRequest(subscribeInvestmentSchema),
+  InvestmentController.subscribeInvestment
+);
+
+router.get("/getInvestments", InvestmentController.getUserInvestments);
 
 router.get("/getTransactions", FundsController.getTransactions);
 
