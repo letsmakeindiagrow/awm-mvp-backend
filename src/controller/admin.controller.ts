@@ -26,8 +26,9 @@ export class AdminController {
         { expiresIn: "1h" }
       );
       res.cookie("admin_token", token, {
-        httpOnly: true,
+        // httpOnly: true,
         secure: process.env.NODE_ENV === "production",
+        domain: "localhost",
         maxAge: 10 * 60 * 60 * 1000,
         sameSite: "lax",
       });
@@ -251,6 +252,16 @@ export class AdminController {
       });
     } catch (error) {
       console.error("Error in AdminController.createInvestmentPlan:", error);
+      res.status(500).json({ message: "Internal server error" });
+      return;
+    }
+  }
+  static async getInvestmentPlans(req: Request, res: Response): Promise<void> {
+    try {
+      const investmentPlans = await prisma.investmentPlan.findMany();
+      res.status(200).json({ investmentPlans });
+    } catch (error) {
+      console.error("Error in AdminController.getInvestmentPlans:", error);
       res.status(500).json({ message: "Internal server error" });
       return;
     }

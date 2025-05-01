@@ -11,4 +11,14 @@ router.get("/get-transactions", verifyRequest, AdminController.getTransactions);
 router.get("/get-users", verifyRequest, AdminController.getUsers);
 router.post("/verify-user", verifyRequest, AdminController.verifyUser);
 router.get("/get-user/:userId", verifyRequest, AdminController.getUserById);
+router.post(
+  "/create-investment-plan",
+  verifyRequest,
+  AdminController.createInvestmentPlan
+);
+router.get(
+  "/get-investment-plans",
+  verifyRequest,
+  AdminController.getInvestmentPlans
+);
 export default router;
