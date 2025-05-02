@@ -22,8 +22,7 @@ export class AdminController {
       }
       const token = jwt.sign(
         { email: req.body.email },
-        process.env.JWT_SECRET || "",
-        { expiresIn: "1h" }
+        process.env.JWT_SECRET || ""
       );
       res.cookie("admin_token", token, {
         // httpOnly: true,
@@ -147,9 +146,29 @@ export class AdminController {
       return;
     }
   }
-  static async getTransactions(req: Request, res: Response): Promise<void> {
+  static async getDepositTransactions(
+    req: Request,
+    res: Response
+  ): Promise<void> {
     try {
-      const transactions = await prisma.fundTransaction.findMany();
+      const transactions = await prisma.fundTransaction.findMany({
+        where: {
+          type: TransactionType.DEPOSIT,
+          status: TransactionStatus.PENDING,
+        },
+        select: {
+          amount: true,
+          method: true,
+          referenceNumber: true,
+          status: true,
+          remark: true,
+          user: {
+            select: {
+              email: true,
+            },
+          },
+        },
+      });
       res.status(200).json({ transactions });
     } catch (error) {
       console.error("Error in AdminController.getTransactions:", error);
@@ -157,6 +176,38 @@ export class AdminController {
       return;
     }
   }
+
+  static async getWithdrawalTransactions(
+    req: Request,
+    res: Response
+  ): Promise<void> {
+    try {
+      const transactions = await prisma.fundTransaction.findMany({
+        where: {
+          type: TransactionType.WITHDRAWAL,
+          status: TransactionStatus.PENDING,
+        },
+        select: {
+          amount: true,
+          status: true,
+          user: {
+            select: {
+              email: true,
+            },
+          },
+        },
+      });
+      res.status(200).json({ transactions });
+    } catch (error) {
+      console.error(
+        "Error in AdminController.getWithdrawalTransactions:",
+        error
+      );
+      res.status(500).json({ message: "Internal server error" });
+      return;
+    }
+  }
+
   static async getUsers(req: Request, res: Response): Promise<void> {
     try {
       const users = await prisma.user.findMany({
