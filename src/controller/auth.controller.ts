@@ -9,14 +9,26 @@ import {
 import { OTPService } from "../services/otpService.js";
 
 const prisma = new PrismaClient();
-const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN; // Define COOKIE_DOMAIN from environment variables
-const COOKIE_NAME = process.env.COOKIE_NAME; // Define COOKIE_NAME from environment variables
+
+// Detailed environment variable debugging
+console.log("=== Environment Variables Debug ===");
+console.log("All environment variables:", process.env);
+console.log("COOKIE_DOMAIN type:", typeof process.env.COOKIE_DOMAIN);
+console.log("COOKIE_DOMAIN value:", process.env.COOKIE_DOMAIN);
+console.log("COOKIE_NAME type:", typeof process.env.COOKIE_NAME);
+console.log("COOKIE_NAME value:", process.env.COOKIE_NAME);
+console.log("=== End Debug ===");
+
+const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN;
+const COOKIE_NAME = process.env.COOKIE_NAME;
 
 if (!COOKIE_DOMAIN) {
+  console.error("COOKIE_DOMAIN is falsy:", COOKIE_DOMAIN);
   throw new Error("FATAL: COOKIE_DOMAIN environment variable is not set.");
 }
 
 if (!COOKIE_NAME) {
+  console.error("COOKIE_NAME is falsy:", COOKIE_NAME);
   throw new Error("FATAL: COOKIE_NAME environment variable is not set.");
 }
 

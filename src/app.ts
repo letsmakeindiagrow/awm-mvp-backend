@@ -1,13 +1,12 @@
+import 'dotenv/config';
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.routes.js";
 import fyer from "./routes/fyers.routes.js";
 import investor from "./routes/investor.routes.js";
 import uploadRoute from "./routes/upload.route.js";
 import adminRoutes from "./routes/admin.routes.js";
-dotenv.config();
 
 const allowedOrigins = [
   "https://login.aadyanviwealth.com",
