@@ -157,6 +157,7 @@ export class AdminController {
           status: TransactionStatus.PENDING,
         },
         select: {
+          id: true,
           amount: true,
           method: true,
           referenceNumber: true,
@@ -188,6 +189,7 @@ export class AdminController {
           status: TransactionStatus.PENDING,
         },
         select: {
+          id: true,
           amount: true,
           status: true,
           user: {
@@ -212,9 +214,9 @@ export class AdminController {
     try {
       const users = await prisma.user.findMany({
         select: {
-          id: true,        
-          email: true,      
-          availableBalance: true,  
+          id: true,
+          email: true,
+          availableBalance: true,
           verificationState: true,
           createdAt: true,
         },
