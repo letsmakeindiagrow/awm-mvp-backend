@@ -30,7 +30,7 @@ router.get(
   verifyRequest,
   AdminController.getWithdrawalTransactions
 );
-router.get("/awm", verifyRequest, AdminController.aum);
+router.get("/aum", verifyRequest, AdminController.aum);
 router.get("/getUnusedFunds", verifyRequest, AdminController.getUnusedFunds);
 router.get("/pendingRequests", verifyRequest, AdminController.pendingRequests);
 router.get("/activePlans", verifyRequest, AdminController.activePlans);
