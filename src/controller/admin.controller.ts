@@ -2,11 +2,15 @@ import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import {
   PrismaClient,
+  ProductStatus,
   TransactionStatus,
   TransactionType,
+  UserInvestmentStatus,
   VerificationStatus,
 } from "@prisma/client";
 import { createInvestmentPlanSchemaType } from "../validation/admin.validation.js";
+import { tr } from "date-fns/locale";
+import { count } from "console";
 
 const prisma = new PrismaClient();
 
@@ -319,6 +323,93 @@ export class AdminController {
       console.error("Error in AdminController.getInvestmentPlans:", error);
       res.status(500).json({ message: "Internal server error" });
       return;
+    }
+  }
+  static async getUnusedFunds(req: Request, res: Response): Promise<void> {
+    try {
+      const funds = await prisma.user.aggregate({
+        _sum: {
+          availableBalance: true,
+        },
+      });
+      res.status(200).json({ funds });
+    } catch (error) {
+      console.error("error : ", error);
+      res.status(500).json({ message: "internal server error" });
+    }
+  }
+  static async pendingRequests(req: Request, res: Response): Promise<void> {
+    try {
+      const users = await prisma.user.aggregate({
+        _count: {
+          verificationState: true,
+        },
+        where: {
+          verificationState: VerificationStatus.PENDING,
+        },
+      });
+      const funds = await prisma.fundTransaction.aggregate({
+        _count: {
+          status: true,
+        },
+        where: {
+          status: TransactionStatus.PENDING,
+        },
+      });
+      const pendingUserCount = users._count?.verificationState ?? 0;
+      const pendingFundCount = funds._count?.status ?? 0;
+      const totalPending = pendingUserCount + pendingFundCount;
+      res.status(200).json({ totalPending });
+    } catch (error) {
+      console.error("the error is : ", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  }
+  static async activePlans(req: Request, res: Response): Promise<void> {
+    try {
+      const plans = await prisma.investmentPlan.aggregate({
+        _count: {
+          status: true,
+        },
+        where: {
+          status: ProductStatus.ACTIVE,
+        },
+      });
+      const totalPlans = plans._count?.status ?? 0;
+      res.status(200).json({ totalPlans });
+    } catch (error) {
+      console.error("the error is : ", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  }
+  static async aum(req: Request, res: Response): Promise<void> {
+    try {
+      const assets = await prisma.userInvestment.aggregate({
+        _sum: {
+          investedAmount: true,
+        },
+      });
+      res.status(200).json({ assets });
+    } catch (error) {
+      console.error("error : ", error);
+      res.status(500).json({ message: "internal server error" });
+    }
+  }
+  static async activeInvestors(req: Request, res: Response): Promise<void> {
+    try {
+      const count = await prisma.user.count({
+        where: {
+          investments: {
+            some: {
+              status: UserInvestmentStatus.ACTIVE,
+            },
+          },
+        },
+      });
+      res.status(200).json({ count });
+    } catch (error) {
+      console.error("the error is : ", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   }
 }
