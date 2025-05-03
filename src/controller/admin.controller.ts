@@ -412,4 +412,17 @@ export class AdminController {
       res.status(500).json({ message: "Internal server error" });
     }
   }
+  static async logout(req: Request, res: Response): Promise<void> {
+    try {
+      res.clearCookie("admin_token", {
+        secure: process.env.NODE_ENV === "production",
+        domain: "localhost",
+        sameSite: "lax",
+      });
+      res.status(200).json({ message: "Logout successful" });
+    } catch (error) {
+      console.error("Error in AdminController.logout:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  }
 }

@@ -5,6 +5,7 @@ import { verifyRequest } from "../middleware/admin.verify.js";
 const router = express.Router();
 
 router.post("/login", AdminController.login);
+router.post("/logout", verifyRequest, AdminController.logout);
 router.post("/add-funds", verifyRequest, AdminController.addFunds);
 router.post("/withdraw-funds", verifyRequest, AdminController.withdrawFunds);
 router.get(

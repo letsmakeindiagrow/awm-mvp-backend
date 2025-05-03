@@ -13,6 +13,7 @@ const allowedOrigins = [
   "https://investor.aadyanviwealth.com",
   "https://www.aadyanviwealth.com",
   "http://localhost:5173",
+  "http://localhost:5174",  
 ];
 
 const app = express();
