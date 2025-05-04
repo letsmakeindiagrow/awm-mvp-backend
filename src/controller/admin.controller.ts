@@ -9,8 +9,6 @@ import {
   VerificationStatus,
 } from "@prisma/client";
 import { createInvestmentPlanSchemaType } from "../validation/admin.validation.js";
-import { tr } from "date-fns/locale";
-import { count } from "console";
 
 const prisma = new PrismaClient();
 
@@ -29,11 +27,14 @@ export class AdminController {
         process.env.JWT_SECRET || ""
       );
       res.cookie("admin_token", token, {
-        // httpOnly: true,
+        httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         domain: "localhost",
         maxAge: 10 * 60 * 60 * 1000,
         sameSite: "lax",
+        ...(process.env.NODE_ENV === "production"
+          ? { domain: "admin.aadyanviwealth.com" }
+          : {}),
       });
       res.status(200).json({ message: "Login sucessful" });
       return;
@@ -368,9 +369,9 @@ export class AdminController {
   static async activePlans(req: Request, res: Response): Promise<void> {
     try {
       const plansByType = await prisma.investmentPlan.groupBy({
-        by: ['type'],
+        by: ["type"],
         where: { status: ProductStatus.ACTIVE },
-        _count: { type: true }
+        _count: { type: true },
       });
       const totalPlans = plansByType.reduce((sum, p) => sum + p._count.type, 0);
       res.status(200).json({ totalPlans, plansByType });
@@ -412,13 +413,30 @@ export class AdminController {
   static async logout(req: Request, res: Response): Promise<void> {
     try {
       res.clearCookie("admin_token", {
+        httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         domain: "localhost",
         sameSite: "lax",
+        ...(process.env.NODE_ENV === "production"
+          ? { domain: "admin.aadyanviwealth.com" }
+          : {}),
       });
       res.status(200).json({ message: "Logout successful" });
     } catch (error) {
       console.error("Error in AdminController.logout:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  }
+  static async checkAuth(req: Request, res: Response): Promise<void> {
+    try {
+      const token = req.cookies.admin_token;
+      if (token) {
+        res.json({ authenticated: true });
+      } else {
+        res.json({ authenticated: true });
+      }
+    } catch (error) {
+      console.error("Error in AdminController.checkAuth:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   }

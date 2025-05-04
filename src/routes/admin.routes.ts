@@ -35,5 +35,7 @@ router.get("/getUnusedFunds", verifyRequest, AdminController.getUnusedFunds);
 router.get("/pendingRequests", verifyRequest, AdminController.pendingRequests);
 router.get("/activePlans", verifyRequest, AdminController.activePlans);
 router.get("/activeInvestors", verifyRequest, AdminController.activeInvestors);
+router.post("/logout", AdminController.logout);
+router.get("/checkAuth", AdminController.checkAuth);
 
 export default router;
