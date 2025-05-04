@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -11,6 +11,7 @@ import adminRoutes from "./routes/admin.routes.js";
 const allowedOrigins = [
   "https://login.aadyanviwealth.com",
   "https://investor.aadyanviwealth.com",
+  "https://admin.aadyanviwealth.com",
   "https://www.aadyanviwealth.com",
   "http://localhost:5173",
   "http://localhost:5174",
