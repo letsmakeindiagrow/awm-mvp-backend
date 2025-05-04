@@ -29,12 +29,8 @@ export class AdminController {
       res.cookie("admin_token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        domain: "localhost",
         maxAge: 10 * 60 * 60 * 1000,
         sameSite: "lax",
-        ...(process.env.NODE_ENV === "production"
-          ? { domain: "admin.aadyanviwealth.com" }
-          : {}),
       });
       res.status(200).json({ message: "Login sucessful" });
       return;
@@ -415,11 +411,7 @@ export class AdminController {
       res.clearCookie("admin_token", {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        domain: "localhost",
         sameSite: "lax",
-        ...(process.env.NODE_ENV === "production"
-          ? { domain: "admin.aadyanviwealth.com" }
-          : {}),
       });
       res.status(200).json({ message: "Logout successful" });
     } catch (error) {
