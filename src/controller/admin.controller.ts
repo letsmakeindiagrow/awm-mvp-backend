@@ -425,7 +425,7 @@ export class AdminController {
       if (token) {
         res.json({ authenticated: true });
       } else {
-        res.json({ authenticated: true });
+        res.json({ authenticated: false });
       }
     } catch (error) {
       console.error("Error in AdminController.checkAuth:", error);
