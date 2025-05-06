@@ -57,7 +57,7 @@ export class AdminController {
               amount: true,
             },
           });
-          await tx.user.update({
+          const user = await tx.user.update({
             where: {
               id: transaction.userId,
             },
@@ -67,20 +67,46 @@ export class AdminController {
               },
             },
           });
+          await tx.fundTransaction.update({
+            where: {
+              id: transactionsId,
+            },
+            data: {
+              balance: user.availableBalance,
+            },
+          });
         });
-
         res.status(200).json({
           message: "Transaction approved",
         });
       } else {
         await prisma.$transaction(async (tx) => {
-          await tx.fundTransaction.update({
+          const transaction = await tx.fundTransaction.update({
             where: {
               id: transactionsId,
               type: TransactionType.DEPOSIT,
             },
             data: {
               status: TransactionStatus.REJECTED,
+            },
+            select: {
+              userId: true,
+            },
+          });
+          const user = await tx.user.findUnique({
+            where: {
+              id: transaction.userId,
+            },
+            select: {
+              availableBalance: true,
+            },
+          });
+          await tx.fundTransaction.update({
+            where: {
+              id: transactionsId,
+            },
+            data: {
+              balance: user?.availableBalance,
             },
           });
         });
@@ -103,6 +129,7 @@ export class AdminController {
             where: {
               id: transactionsId,
               type: TransactionType.WITHDRAWAL,
+              status: TransactionStatus.PENDING,
             },
             data: {
               status: TransactionStatus.APPROVED,
@@ -112,7 +139,7 @@ export class AdminController {
               amount: true,
             },
           });
-          await tx.user.update({
+          const user = await tx.user.update({
             where: {
               id: transaction.userId,
             },
@@ -122,21 +149,60 @@ export class AdminController {
               },
             },
           });
+          await tx.user.findUnique({
+            where: {
+              id: transaction.userId,
+            },
+            select: {
+              availableBalance: true,
+            },
+          });
+          await tx.fundTransaction.update({
+            where: {
+              id: transactionsId,
+            },
+            data: {
+              balance: user?.availableBalance,
+            },
+          });
         });
 
         res.status(200).json({
           message: "Withdrawal approved",
         });
       } else {
-        await prisma.fundTransaction.update({
-          where: {
-            id: transactionsId,
-            type: TransactionType.WITHDRAWAL,
-          },
-          data: {
-            status: TransactionStatus.REJECTED,
-          },
+        await prisma.$transaction(async (tx) => {
+          const transaction = await tx.fundTransaction.update({
+            where: {
+              id: transactionsId,
+              type: TransactionType.WITHDRAWAL,
+              status: TransactionStatus.PENDING,
+            },
+            data: {
+              status: TransactionStatus.REJECTED,
+            },
+            select: {
+              userId: true,
+            },
+          });
+          const user = await tx.user.findUnique({
+            where: {
+              id: transaction.userId,
+            },
+            select: {
+              availableBalance: true,
+            },
+          });
+          await tx.fundTransaction.update({
+            where: {
+              id: transactionsId,
+            },
+            data: {
+              balance: user?.availableBalance,
+            },
+          });
         });
+
         res.status(200).json({
           message: "Withdrawal rejected",
         });

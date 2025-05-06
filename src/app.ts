@@ -13,8 +13,8 @@ const allowedOrigins = [
   "https://investor.aadyanviwealth.com",
   "https://admin.aadyanviwealth.com",
   "https://www.aadyanviwealth.com",
-  "http://localhost:5173",
-  "http://localhost:5174",
+  "https://login.local.com",
+  "https://dashboard.local.com",
 ];
 
 const app = express();

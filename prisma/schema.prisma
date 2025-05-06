@@ -155,7 +155,7 @@ model FundTransaction {
   remark          String?         
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-
+  balance         Decimal?
 }
 
 model InvestmentPlan {

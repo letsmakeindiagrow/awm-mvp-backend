@@ -7,6 +7,17 @@ import { addYears } from "date-fns";
 const prisma = new PrismaClient();
 
 export class InvestmentController {
+  static async getInvestmentPlans(req: Request, res: Response): Promise<void> {
+    try {
+      const investmentPlans = await prisma.investmentPlan.findMany();
+      res.status(200).json({ investmentPlans });
+    } catch (error) {
+      console.error("Error in InvestmentController.getInvestmentPlans:", error);
+      res.status(500).json({ message: "Internal server error" });
+      return;
+    }
+  }
+
   static async subscribeInvestment(req: Request, res: Response): Promise<void> {
     try {
       if (!req.user?.userId) {
@@ -30,8 +41,8 @@ export class InvestmentController {
         return;
       }
 
-      if (investmentPlan.type !== "SIP") {
-        res.status(400).json({ message: "Investment plan is not a SIP" });
+      if (investmentPlan.type === "SIP") {
+        res.status(400).json({ message: "SIP are coming soon" });
         return;
       }
 
@@ -111,6 +122,15 @@ export class InvestmentController {
         where: {
           userId: req.user.userId,
         },
+        include: {
+          investmentPlan: {
+            select: {
+              investmentTerm: true,
+              roiAAR: true,
+              type: true,
+            },
+          },
+        },
       });
       res.status(200).json({
         message: "Investments fetched successfully",
@@ -118,6 +138,28 @@ export class InvestmentController {
       });
     } catch (error) {
       console.error("Error in InvestmentController.getUserInvestments:", error);
+      res.status(500).json({ message: "Internal server error" });
+      return;
+    }
+  }
+
+  static async getBalance(req: Request, res: Response): Promise<void> {
+    try {
+      if (!req.user?.userId) {
+        res.status(401).json({ message: "Unauthorized: User ID is required" });
+        return;
+      }
+      const balance = await prisma.user.findUnique({
+        where: {
+          id: req.user.userId,
+        },
+        select: {
+          availableBalance: true,
+        },
+      });
+      res.status(200).json({ balance });
+    } catch (error) {
+      console.error("Error in InvestmentController.getBalance:", error);
       res.status(500).json({ message: "Internal server error" });
       return;
     }

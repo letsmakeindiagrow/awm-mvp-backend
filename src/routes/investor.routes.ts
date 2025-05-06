@@ -33,4 +33,7 @@ router.get("/getInvestments", InvestmentController.getUserInvestments);
 
 router.get("/getTransactions", FundsController.getTransactions);
 
+router.get("/getInvestmentPlans", InvestmentController.getInvestmentPlans);
+
+router.get("/getBalance", InvestmentController.getBalance);
 export default router;
