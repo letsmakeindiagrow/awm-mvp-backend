@@ -43,7 +43,7 @@ export class AdminController {
   static async addFunds(req: Request, res: Response): Promise<void> {
     try {
       const { transactionsId, status } = req.body;
-      if (status === "approve") {
+      if (status === "approved") {
         await prisma.$transaction(async (tx) => {
           const transaction = await tx.fundTransaction.update({
             where: {
