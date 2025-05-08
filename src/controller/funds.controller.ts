@@ -67,7 +67,9 @@ export class FundsController {
       const transactions = await prisma.fundTransaction.findMany({
         where: {
           userId: req.user?.userId,
-          status: TransactionStatus.APPROVED,
+          status: {
+            in: [TransactionStatus.APPROVED, TransactionStatus.PENDING],
+          },
         },
         select: {
           id: true,
@@ -77,6 +79,7 @@ export class FundsController {
           amount: true,
           referenceNumber: true,
           remark: true,
+          balance: true,
         },
         orderBy: {
           createdAt: "desc",
@@ -91,6 +94,7 @@ export class FundsController {
         amount: tx.amount.toNumber(),
         refNumber: tx.referenceNumber ? tx.referenceNumber.toString() : null,
         remark: tx.remark,
+        balance: tx.balance ? tx.balance.toNumber() : null,
       }));
 
       res.status(200).json(formattedTransactions);
