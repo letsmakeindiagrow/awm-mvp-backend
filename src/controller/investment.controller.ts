@@ -1,5 +1,11 @@
 import { Request, Response } from "express";
-import { PrismaClient, WithdrawalType } from "@prisma/client";
+import {
+  PrismaClient,
+  TransactionMethod,
+  TransactionType,
+  WithdrawalType,
+  VoucherType,
+} from "@prisma/client";
 import { Decimal } from "decimal.js";
 import {
   subscribeInvestmentType,
@@ -96,6 +102,15 @@ export class InvestmentController {
             investmentDate,
             maturityDate,
             withdrawalFrequency: payload.withdrawalFrequency,
+          },
+        });
+        const fundTransaction = await tx.fundTransaction.create({
+          data: {
+            userId: req.user!.userId,
+            debitAmount: payload.investedAmount,
+            type: TransactionType.WITHDRAWAL,
+            method: TransactionMethod.NEFT,
+            voucherType: VoucherType.BOOK_VOUCHER,
           },
         });
         return investment;
@@ -220,13 +235,29 @@ export class InvestmentController {
       const NetPayout = totalGain.minus(exitExpense);
 
       const transaction = await prisma.$transaction(async (tx) => {
-        // ledger logic should be here
+        const fundTransaction = await tx.fundTransaction.create({
+          data: {
+            userId: req.user?.userId!,
+            creditAmount: NetPayout,
+            type: TransactionType.DEPOSIT,
+            method: TransactionMethod.NEFT,
+            voucherType: VoucherType.BOOK_VOUCHER,
+          },
+        });
+        const fundTransaction_new = await tx.fundTransaction.create({
+          data: {
+            userId: req.user?.userId!,
+            debitAmount: exitExpense,
+            type: TransactionType.WITHDRAWAL,
+            method: TransactionMethod.NEFT,
+            voucherType: VoucherType.JOURNAL_VOUCHER,
+          },
+        });
         const withdrawal = await tx.withdrawalDetails.create({
           data: {
             userId: req.user?.userId!,
             userInvestmentId: investment.id,
             type: WithdrawalType.PRE_MATURITY_EXIT,
-            grossAmount: totalGain,
             netAmountPaid: NetPayout,
             lockInStageAchieved: lockInStage,
             expensePercentageApplied: expensePercentageApplied,

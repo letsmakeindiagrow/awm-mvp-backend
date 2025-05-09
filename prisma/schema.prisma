@@ -57,6 +57,12 @@ enum TransactionType {
   DEPOSIT
   WITHDRAWAL
 }
+enum VoucherType {
+  BANK_RECEIPT
+  BANK_PAYMENT
+  JOURNAL_VOUCHER
+  BOOK_VOUCHER
+}
 
 enum TransactionMethod {
   UPI
@@ -154,7 +160,10 @@ model FundTransaction {
   user            User      @relation(fields: [userId], references: [id])
   type            TransactionType  
   method          TransactionMethod
-  amount          Decimal          
+  voucherType     VoucherType?
+  Narration       String?
+  debitAmount     Decimal?
+  creditAmount    Decimal?
   status          TransactionStatus @default(PENDING) 
   referenceNumber Int?      
   bankDetailsId   String?         

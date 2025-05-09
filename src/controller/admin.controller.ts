@@ -54,7 +54,7 @@ export class AdminController {
             },
             select: {
               userId: true,
-              amount: true,
+              creditAmount: true,
             },
           });
           const user = await tx.user.update({
@@ -63,7 +63,7 @@ export class AdminController {
             },
             data: {
               availableBalance: {
-                increment: transaction.amount,
+                increment: transaction.creditAmount ?? 0,
               },
             },
           });
@@ -136,7 +136,7 @@ export class AdminController {
             },
             select: {
               userId: true,
-              amount: true,
+              debitAmount: true,
             },
           });
           const user = await tx.user.update({
@@ -145,7 +145,7 @@ export class AdminController {
             },
             data: {
               availableBalance: {
-                decrement: transaction.amount,
+                decrement: transaction.debitAmount ?? 0,
               },
             },
           });
@@ -225,7 +225,7 @@ export class AdminController {
         },
         select: {
           id: true,
-          amount: true,
+          creditAmount: true,
           method: true,
           referenceNumber: true,
           status: true,
@@ -257,7 +257,7 @@ export class AdminController {
         },
         select: {
           id: true,
-          amount: true,
+          debitAmount: true,
           status: true,
           user: {
             select: {

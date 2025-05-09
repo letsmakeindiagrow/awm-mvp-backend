@@ -4,6 +4,7 @@ import {
   TransactionMethod,
   TransactionType,
   TransactionStatus,
+  VoucherType,
 } from "@prisma/client";
 import {
   addFundType,
@@ -23,11 +24,12 @@ export class FundsController {
       await prisma.fundTransaction.create({
         data: {
           userId: req.user?.userId,
-          amount: payload.amount,
+          creditAmount: payload.amount,
           type: TransactionType.DEPOSIT,
           method: payload.paymentMethod,
           referenceNumber: parseInt(payload.referenceNumber, 10),
           remark: payload.comments,
+          voucherType: VoucherType.BANK_RECEIPT,
         },
       });
       res.status(201).json({ message: "Funds added successfully." });
@@ -46,9 +48,10 @@ export class FundsController {
       await prisma.fundTransaction.create({
         data: {
           userId: req.user?.userId,
-          amount: payload.amount,
+          debitAmount: payload.amount,
           type: TransactionType.WITHDRAWAL,
           method: TransactionMethod.NEFT,
+          voucherType: VoucherType.BANK_PAYMENT,
         },
       });
       res.status(201).json({ message: "Request sent successfully" });
@@ -76,7 +79,8 @@ export class FundsController {
           createdAt: true,
           method: true,
           type: true,
-          amount: true,
+          debitAmount: true,
+          creditAmount: true,
           referenceNumber: true,
           remark: true,
           balance: true,
@@ -91,7 +95,9 @@ export class FundsController {
         datetime: tx.createdAt.toISOString(),
         method: tx.method,
         type: tx.type,
-        amount: tx.amount.toNumber(),
+        amount: tx.debitAmount
+          ? tx.debitAmount.toNumber()
+          : tx.creditAmount?.toNumber(),
         refNumber: tx.referenceNumber ? tx.referenceNumber.toString() : null,
         remark: tx.remark,
         balance: tx.balance ? tx.balance.toNumber() : null,
