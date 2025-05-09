@@ -109,4 +109,33 @@ export class FundsController {
       res.status(500).json({ message: "Failed to retrieve transactions." });
     }
   }
+  static async ledger(req: Request, res: Response): Promise<void> {
+    try {
+      if (!req.user?.userId) {
+        res.status(401).json({ message: "Unauthorized: User ID is required" });
+        return;
+      }
+      const ledger = await prisma.fundTransaction.findMany({
+        where: {
+          userId: req.user?.userId,
+        },
+        select: {
+          id: true,
+          createdAt: true,
+          voucherType: true,
+          Narration: true,
+          debitAmount: true,
+          creditAmount: true,
+          balance: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+      res.status(200).json(ledger);
+    } catch (error) {
+      console.error("Error fetching ledger:", error);
+      res.status(500).json({ message: "Failed to retrieve ledger." });
+    }
+  }
 }

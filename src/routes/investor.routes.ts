@@ -36,4 +36,9 @@ router.get("/getTransactions", FundsController.getTransactions);
 router.get("/getInvestmentPlans", InvestmentController.getInvestmentPlans);
 
 router.get("/getBalance", InvestmentController.getBalance);
+
+router.get("/ledger", FundsController.ledger);
+
+router.post("/withdrawPreMaturity", InvestmentController.withdrawPreMaturity);
+
 export default router;
