@@ -1,10 +1,14 @@
 import { z } from "zod";
-import { InvestmentMode, WithdrawalFrequency } from "@prisma/client";
+import { WithdrawalFrequency } from "@prisma/client";
 export const subscribeInvestmentSchema = z.object({
   investmentPlanId: z.string(),
-  investmentMode: z.nativeEnum(InvestmentMode),
   withdrawalFrequency: z.nativeEnum(WithdrawalFrequency),
   investedAmount: z.number(),
 });
 
+export const withdrawPreMaturitySchema = z.object({
+  investmentPlanId: z.string(),
+});
+
 export type subscribeInvestmentType = z.infer<typeof subscribeInvestmentSchema>;
+export type withdrawPreMaturityType = z.infer<typeof withdrawPreMaturitySchema>;

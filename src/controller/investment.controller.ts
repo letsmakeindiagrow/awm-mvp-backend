@@ -1,8 +1,11 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, WithdrawalType } from "@prisma/client";
 import { Decimal } from "decimal.js";
-import { subscribeInvestmentType } from "../validation/investment.validation.js";
-import { addYears } from "date-fns";
+import {
+  subscribeInvestmentType,
+  withdrawPreMaturityType,
+} from "../validation/investment.validation.js";
+import { addYears, differenceInDays } from "date-fns";
 
 const prisma = new PrismaClient();
 
@@ -92,7 +95,6 @@ export class InvestmentController {
             investedAmount: payload.investedAmount,
             investmentDate,
             maturityDate,
-            investmentMode: payload.investmentMode,
             withdrawalFrequency: payload.withdrawalFrequency,
           },
         });
@@ -160,6 +162,87 @@ export class InvestmentController {
       res.status(200).json({ balance });
     } catch (error) {
       console.error("Error in InvestmentController.getBalance:", error);
+      res.status(500).json({ message: "Internal server error" });
+      return;
+    }
+  }
+
+  static async withdrawPreMaturity(req: Request, res: Response): Promise<void> {
+    try {
+      if (!req.user?.userId) {
+        res.status(401).json({ message: "Unauthorized: User ID is required" });
+        return;
+      }
+      const payload: withdrawPreMaturityType = req.body;
+      const investment = await prisma.userInvestment.findUnique({
+        where: {
+          id: payload.investmentPlanId,
+          userId: req.user.userId,
+        },
+        include: {
+          investmentPlan: true,
+        },
+      });
+      if (!investment) {
+        res.status(404).json({ message: "Investment not found" });
+        return;
+      }
+
+      const T_elaspsed = differenceInDays(
+        investment.investmentDate,
+        new Date()
+      );
+      const T_lockIn = investment.investmentPlan.investmentTerm * 365;
+      const P_completed = (T_elaspsed / T_lockIn) * 100;
+      let lockInStage = 0;
+      let expensePercentageApplied = 0;
+      if (0 < P_completed && P_completed <= 25) {
+        lockInStage = 1;
+        expensePercentageApplied = 5;
+      } else if (25 < P_completed && P_completed <= 50) {
+        lockInStage = 2;
+        expensePercentageApplied = 3.5;
+      } else if (50 < P_completed && P_completed <= 75) {
+        lockInStage = 3;
+        expensePercentageApplied = 2.5;
+      } else if (75 < P_completed && P_completed <= 100) {
+        lockInStage = 4;
+        expensePercentageApplied = 0;
+      }
+
+      const principalAsDecimal = new Decimal(investment.investedAmount);
+      const gainComponent = principalAsDecimal
+        .times(investment.investmentPlan.roiAAR.div(100))
+        .times(new Decimal(T_elaspsed).div(365));
+
+      const totalGain: Decimal = principalAsDecimal.plus(gainComponent);
+      const exitExpense = totalGain.times(expensePercentageApplied).div(100);
+      const NetPayout = totalGain.minus(exitExpense);
+
+      const transaction = await prisma.$transaction(async (tx) => {
+        // ledger logic should be here
+        const withdrawal = await tx.withdrawalDetails.create({
+          data: {
+            userId: req.user?.userId!,
+            userInvestmentId: investment.id,
+            type: WithdrawalType.PRE_MATURITY_EXIT,
+            grossAmount: totalGain,
+            netAmountPaid: NetPayout,
+            lockInStageAchieved: lockInStage,
+            expensePercentageApplied: expensePercentageApplied,
+            expenseAmountDeducted: exitExpense,
+          },
+        });
+      });
+      res.status(200).json({
+        message: "Withdrawal request submitted successfully",
+        transaction,
+      });
+    } catch (error) {
+      console.error(
+        "Error in InvestmentController.withdrawPreMaturity:",
+        error
+      );
       res.status(500).json({ message: "Internal server error" });
       return;
     }

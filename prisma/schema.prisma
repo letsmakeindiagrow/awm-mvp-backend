@@ -25,11 +25,6 @@ enum ProductStatus {
   DEACTIVATED
 }
 
-enum InvestmentMode {
-  SIP
-  LUMPSUM
-}
-
 enum WithdrawalFrequency {
   QUARTERLY
   ANNUAL
@@ -40,6 +35,17 @@ enum UserInvestmentStatus {
   ACTIVE
   MATURED
   WITHDRAWN
+  WITHDRAWN_PREMATURELY
+}
+
+enum WithdrawalStatus {
+  PROCESSING
+  COMPLETED
+}
+
+enum WithdrawalType {
+  PRE_MATURITY_EXIT
+  SCHEDULED_PAYOUT
 }
 
 enum ProductType {
@@ -83,7 +89,8 @@ model User {
   otps              OTP[]
   fundTransactions  FundTransaction[]
   investments       UserInvestment[]
-  availableBalance  Decimal           @default(0) 
+  availableBalance  Decimal           @default(0)
+  withdrawalDetails WithdrawalDetails[] // Relation to all withdrawal attempts made by this user
 }
 
 
@@ -156,6 +163,7 @@ model FundTransaction {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   balance         Decimal?
+  withdrawalDetails WithdrawalDetails? // Link to withdrawal details if this transaction is a payout
 }
 
 model InvestmentPlan {
@@ -169,6 +177,7 @@ model InvestmentPlan {
   maturityValue      Decimal       // Calculated: minInvestment + totalGain
   status             ProductStatus @default(ACTIVE)
   type               ProductType
+  payoutInstallmentCount Int?          // For LUMPSUM type with QUARTERLY/ANNUAL withdrawalFrequency: Number of installments post-maturity.
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
   investments        UserInvestment[]
@@ -179,7 +188,7 @@ model UserInvestment {
   investedAmount     Float                // Consider using Decimal for financial precision
   investmentDate     DateTime             @default(now())
   maturityDate       DateTime             // Calculated on creation
-  investmentMode     InvestmentMode       // Reflects this specific investment's mode
+  totalMaturedValue  Decimal?             // Final value calculated at maturityDate
   withdrawalFrequency WithdrawalFrequency // User's choice for this investment
   status             UserInvestmentStatus @default(ACTIVE)
   createdAt          DateTime             @default(now())
@@ -188,7 +197,40 @@ model UserInvestment {
   user               User                 @relation(fields: [userId], references: [id])
   investmentPlanId   String
   investmentPlan     InvestmentPlan       @relation(fields: [investmentPlanId], references: [id])
+  withdrawalDetails  WithdrawalDetails[]  // Relation to all withdrawal attempts for this investment
 
   @@index([userId])
   @@index([investmentPlanId])
+}
+
+model WithdrawalDetails {
+  id                       String           @id @default(uuid())
+  userInvestmentId         String
+  userInvestment           UserInvestment   @relation(fields: [userInvestmentId], references: [id])
+  userId                   String
+  user                     User             @relation(fields: [userId], references: [id])
+
+  type                     WithdrawalType
+  status                   WithdrawalStatus @default(PROCESSING)
+
+  initiatedAt              DateTime         @default(now())
+  processedAt              DateTime?
+
+  grossAmount              Decimal?
+  netAmountPaid            Decimal
+  
+  lockInStageAchieved      Int?
+  expensePercentageApplied Decimal?
+  expenseAmountDeducted    Decimal?
+
+  fundTransactionId        String?          @unique
+  fundTransaction          FundTransaction? @relation(fields: [fundTransactionId], references: [id])
+
+  createdAt                DateTime         @default(now())
+  updatedAt                DateTime         @updatedAt
+
+  @@index([userInvestmentId])
+  @@index([userId])
+  @@index([status])
+  @@index([type])
 }
