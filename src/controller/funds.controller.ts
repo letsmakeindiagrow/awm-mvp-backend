@@ -118,6 +118,9 @@ export class FundsController {
       const ledger = await prisma.fundTransaction.findMany({
         where: {
           userId: req.user?.userId,
+          status: {
+            in: [TransactionStatus.APPROVED],
+          },
         },
         select: {
           id: true,

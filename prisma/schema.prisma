@@ -160,7 +160,7 @@ model FundTransaction {
   user            User      @relation(fields: [userId], references: [id])
   type            TransactionType  
   method          TransactionMethod
-  voucherType     VoucherType?
+  voucherType     VoucherType
   Narration       String?
   debitAmount     Decimal?
   creditAmount    Decimal?

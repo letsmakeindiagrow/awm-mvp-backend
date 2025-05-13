@@ -204,8 +204,8 @@ export class InvestmentController {
       }
 
       const T_elaspsed = differenceInDays(
-        investment.investmentDate,
-        new Date()
+        new Date(),
+        investment.investmentDate
       );
       const T_lockIn = investment.investmentPlan.investmentTerm * 365;
       const P_completed = (T_elaspsed / T_lockIn) * 100;
@@ -276,6 +276,19 @@ export class InvestmentController {
       );
       res.status(500).json({ message: "Internal server error" });
       return;
+    }
+  }
+  static async checkAuth(req: Request, res: Response): Promise<void> {
+    try {
+      const token = req.cookies.auth_token;
+      if (token) {
+        res.json({ authenticated: true });
+      } else {
+        res.json({ authenticated: false });
+      }
+    } catch (error) {
+      console.error("Error in InvestmentController.checkAuth:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   }
 }
