@@ -9,6 +9,9 @@ import { verifyRequest } from "../middleware/jwt.middleware.js";
 import { subscribeInvestmentSchema } from "../validation/investment.validation.js";
 import { InvestmentController } from "../controller/investment.controller.js";
 const router = express.Router();
+
+router.get("/checkAuth", InvestmentController.checkAuth);
+
 router.use(verifyRequest);
 
 router.post(
