@@ -25,7 +25,7 @@ export const planStatusSchema = z.object({
 });
 
 export const createNewUserSchema = z.object({
-  referralCode: z.string().optional(),
+  referralCode: z.string().nullable().optional(),
   mobileNumber: z.string().min(10, "Mobile number must be 10 digits"),
   email: z.string().email("Invalid email format"),
   password: z.string(),
