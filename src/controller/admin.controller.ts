@@ -8,7 +8,13 @@ import {
   UserInvestmentStatus,
   VerificationStatus,
 } from "@prisma/client";
-import { createInvestmentPlanSchemaType } from "../validation/admin.validation.js";
+import {
+  createInvestmentPlanSchemaType,
+  createNewUserSchemaType,
+  editInvestmentPlanSchemaType,
+  planStatusSchemaType,
+} from "../validation/admin.validation.js";
+import bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
 
@@ -496,6 +502,137 @@ export class AdminController {
     } catch (error) {
       console.error("Error in AdminController.checkAuth:", error);
       res.status(500).json({ message: "Internal server error" });
+    }
+  }
+  static async deleteInvestmentPlan(
+    req: Request,
+    res: Response
+  ): Promise<void> {
+    try {
+      const { planId } = req.params;
+      await prisma.investmentPlan.delete({
+        where: { id: planId },
+      });
+      res.status(200).json({ message: "Investment plan deleted successfully" });
+    } catch (error) {
+      console.error("Error in AdminController.deleteInvestmentPlan:", error);
+    }
+  }
+  static async planStatus(req: Request, res: Response): Promise<void> {
+    try {
+      const planStatusPayload: planStatusSchemaType = req.body;
+      if (planStatusPayload.status === "ACTIVE") {
+        await prisma.investmentPlan.update({
+          where: { id: planStatusPayload.planId },
+          data: { status: ProductStatus.ACTIVE },
+        });
+      } else {
+        await prisma.investmentPlan.update({
+          where: { id: planStatusPayload.planId },
+          data: { status: ProductStatus.DEACTIVATED },
+        });
+      }
+      res
+        .status(200)
+        .json({ message: "Investment plan status updated successfully" });
+    } catch (error) {
+      console.error("Error in AdminController.planStatus:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  }
+  static async editInvestmentPlan(req: Request, res: Response): Promise<void> {
+    try {
+      const payload: editInvestmentPlanSchemaType = req.body;
+      const investmentPlan = await prisma.investmentPlan.update({
+        where: { id: payload.planId },
+        data: {
+          name: payload.name,
+          roiAAR: payload.roiAAR,
+          roiAMR: payload.roiAMR,
+          minInvestment: payload.minInvestment,
+          investmentTerm: payload.investmentTerm,
+        },
+      });
+      res.status(200).json({
+        message: "Investment plan updated successfully",
+        investmentPlan,
+      });
+    } catch (error) {
+      console.error("Error in AdminController.editInvestmentPlan:", error);
+    }
+  }
+  static async createNewUser(req: Request, res: Response): Promise<void> {
+    try {
+      const payload: createNewUserSchemaType = req.body;
+
+      const existingUser = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { email: payload.email },
+            { mobileNumber: payload.mobileNumber },
+          ],
+        },
+      });
+
+      if (existingUser) {
+        res.status(400).json({
+          message: "User already exists with this email or mobile number",
+        });
+        return;
+      }
+
+      // Hash the password
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(payload.password, saltRounds);
+
+      // Create user with base information first
+      const user = await prisma.user.create({
+        data: {
+          referralCode: payload.referralCode,
+          mobileNumber: payload.mobileNumber,
+          email: payload.email,
+          firstName: payload.firstName,
+          lastName: payload.lastName,
+          dateOfBirth: payload.dateOfBirth,
+          password: hashedPassword, // Store hashed password
+          verificationState: "PENDING",
+          mobileVerified: false,
+          emailVerified: false,
+        },
+      });
+
+      // If address is provided, create it
+      if (payload.address) {
+        await prisma.address.create({
+          data: {
+            userId: user.id,
+            ...payload.address,
+          },
+        });
+      }
+
+      // If identity details are provided, create them
+      if (payload.identityDetails) {
+        await prisma.identityDetails.create({
+          data: {
+            userId: user.id,
+            ...payload.identityDetails,
+          },
+        });
+      }
+
+      // If bank details are provided, create them
+      if (payload.bankDetails) {
+        await prisma.bankDetails.create({
+          data: {
+            userId: user.id,
+            ...payload.bankDetails,
+          },
+        });
+      }
+      res.status(200).json({ message: "User created successfully", user });
+    } catch (error) {
+      console.error("Error in AdminController.createNewUser:", error);
     }
   }
 }
