@@ -7,6 +7,8 @@ import {
   TransactionType,
   UserInvestmentStatus,
   VerificationStatus,
+  VoucherType,
+  WithdrawalStatus,
 } from "@prisma/client";
 import {
   createInvestmentPlanSchemaType,
@@ -61,6 +63,7 @@ export class AdminController {
             select: {
               userId: true,
               creditAmount: true,
+              voucherType: true,
             },
           });
           const user = await tx.user.update({
@@ -81,6 +84,17 @@ export class AdminController {
               balance: user.availableBalance,
             },
           });
+          if (transaction.voucherType === VoucherType.BOOK_VOUCHER) {
+            await tx.withdrawalDetails.update({
+              where: {
+                fundTransactionId: transactionsId,
+              },
+              data: {
+                status: WithdrawalStatus.COMPLETED,
+                processedAt: new Date(),
+              },
+            });
+          }
         });
         res.status(200).json({
           message: "Transaction approved",
