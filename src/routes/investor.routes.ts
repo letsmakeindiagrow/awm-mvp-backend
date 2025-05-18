@@ -52,5 +52,6 @@ router.post("/withdrawPreMaturity", InvestmentController.withdrawPreMaturity);
 router.get("/totalInvestment", InvestmentController.totalInvestment);
 router.get("/totalCurrentValue", InvestmentController.totalCurrentValue);
 router.get("/totalInvestments", InvestmentController.totalInvestments);
+router.get("/logout", InvestmentController.logout);
 
 export default router;
