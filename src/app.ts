@@ -18,7 +18,6 @@ const allowedOrigins = [
 ];
 
 const app = express();
-app.options("*", cors());
 app.use(
   cors({
     origin: function (origin, callback) {
