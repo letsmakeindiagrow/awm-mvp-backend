@@ -44,7 +44,4 @@ app.use("/api/v1/investor", investor);
 app.use("/api/v1/documents", uploadRoute);
 app.use("/api/v1/admin", adminRoutes);
 
-const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-});
+export default app;
