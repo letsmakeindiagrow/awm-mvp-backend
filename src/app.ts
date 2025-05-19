@@ -21,9 +21,12 @@ const app = express();
 app.use(
   cors({
     origin: function (origin, callback) {
+      console.log("CORS Middleware: Request Origin Header:", origin);
       if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        console.log("CORS Middleware: Origin ALLOWED:", origin);
         callback(null, origin);
       } else {
+        console.log("CORS Middleware: Origin DENIED:", origin);
         callback(new Error("Not allowed by CORS"));
       }
     },
