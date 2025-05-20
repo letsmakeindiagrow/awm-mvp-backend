@@ -15,6 +15,7 @@ const allowedOrigins = [
   "https://www.aadyanviwealth.com",
   "https://login.local.com",
   "https://dashboard.local.com",
+  "https://vercel.com/aadyanvi-wealth-managements-projects/investor-dashboard-awm/F9EovXtwUbj6sNV4LW2HTg8KpECC",
 ];
 
 const app = express();
