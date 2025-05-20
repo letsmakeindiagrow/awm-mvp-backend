@@ -47,5 +47,5 @@ app.use("/api/v1/fyers", fyer);
 app.use("/api/v1/investor", investor);
 app.use("/api/v1/documents", uploadRoute);
 app.use("/api/v1/admin", adminRoutes);
-
+// trigger redeploy - test 1
 export default app;
