@@ -17,14 +17,15 @@
   "description": "",
   "devDependencies": {
     "@types/node": "^22.13.1",
-    "prisma": "^6.3.1",
+    "prisma": "^6.8.2",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.787.0",
-    "@prisma/client": "^6.3.1",
+    "@prisma/client": "^6.8.2",
+    "@prisma/extension-accelerate": "^2.0.0",
     "@types/bcrypt": "^5.0.2",
     "@types/cookie-parser": "^1.4.8",
     "@types/cors": "^2.8.17",

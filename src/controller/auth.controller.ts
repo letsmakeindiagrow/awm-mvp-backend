@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client/edge";
+import { withAccelerate } from "@prisma/extension-accelerate";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import {
@@ -8,7 +9,7 @@ import {
 } from "../validation/auth.validation.js";
 import { OTPService } from "../services/otpService.js";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient().$extends(withAccelerate());
 
 // Detailed environment variable debugging
 console.log("=== Environment Variables Debug ===");

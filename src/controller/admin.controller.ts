@@ -9,7 +9,7 @@ import {
   VerificationStatus,
   VoucherType,
   WithdrawalStatus,
-} from "@prisma/client";
+} from "@prisma/client/edge";
 import {
   createInvestmentPlanSchemaType,
   createNewUserSchemaType,
@@ -17,8 +17,9 @@ import {
   planStatusSchemaType,
 } from "../validation/admin.validation.js";
 import bcrypt from "bcrypt";
+import { withAccelerate } from "@prisma/extension-accelerate";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient().$extends(withAccelerate());
 
 export class AdminController {
   static async login(req: Request, res: Response): Promise<void> {

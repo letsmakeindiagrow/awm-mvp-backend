@@ -5,13 +5,14 @@ import {
   TransactionType,
   TransactionStatus,
   VoucherType,
-} from "@prisma/client";
+} from "@prisma/client/edge";
 import {
   addFundType,
   withdrawFundType,
 } from "../validation/funds.validation.js";
+import { withAccelerate } from "@prisma/extension-accelerate";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient().$extends(withAccelerate());
 
 export class FundsController {
   static async addFunds(req: Request, res: Response): Promise<void> {

@@ -1,8 +1,9 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client/edge";
 import { randomInt } from "crypto";
 import { sendConfirmationEmail } from "../services/sendConfirmationEmail.js";
+import { withAccelerate } from "@prisma/extension-accelerate";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient().$extends(withAccelerate());
 
 export class OTPService {
   // Generate a 6-digit OTP

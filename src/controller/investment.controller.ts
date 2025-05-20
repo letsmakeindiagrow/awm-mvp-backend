@@ -5,15 +5,16 @@ import {
   TransactionType,
   WithdrawalType,
   VoucherType,
-} from "@prisma/client";
+} from "@prisma/client/edge";
 import { Decimal } from "decimal.js";
 import {
   subscribeInvestmentType,
   withdrawPreMaturityType,
 } from "../validation/investment.validation.js";
 import { addYears, differenceInDays } from "date-fns";
+import { withAccelerate } from "@prisma/extension-accelerate";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient().$extends(withAccelerate());
 
 export class InvestmentController {
   static async getInvestmentPlans(req: Request, res: Response): Promise<void> {
