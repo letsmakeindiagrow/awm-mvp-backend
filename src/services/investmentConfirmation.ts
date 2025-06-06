@@ -169,7 +169,7 @@ export const investmentConfirmationMail = async (
 								<p style="margin: 0 0 25px 0">Dear ${name},</p>
 								<p style="margin: 0 0 25px 0">
 									We are pleased to confirm your recent investment in
-									<strong>[Product Name]</strong>.
+									<strong>${planName}</strong>.
 								</p>
 
 								<!-- Transaction Details Table -->
@@ -207,7 +207,7 @@ export const investmentConfirmationMail = async (
 												color: #212529;
 											"
 										>
-											[Amount]
+											${amount}
 										</td>
 									</tr>
 									<tr>
@@ -226,7 +226,7 @@ export const investmentConfirmationMail = async (
 												border-bottom: 1px solid #e9ecef;
 											"
 										>
-											[Date]
+											${date}
 										</td>
 									</tr>
 									<tr>
@@ -234,7 +234,7 @@ export const investmentConfirmationMail = async (
 											Reference Number:
 										</td>
 										<td align="right" style="padding: 12px 0">
-											[Reference ID]
+											${transactionId}
 										</td>
 									</tr>
 								</table>
@@ -266,7 +266,7 @@ export const investmentConfirmationMail = async (
 														style="border-radius: 5px"
 													>
 														<a
-															href="[Login URL]"
+															href="https://login.aadyanviwealth.com"
 															target="_blank"
 															style="
 																display: inline-block;
