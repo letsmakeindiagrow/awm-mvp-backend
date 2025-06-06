@@ -40,9 +40,25 @@ export class FundsController {
     }
   }
   static async withdrawFunds(req: Request, res: Response): Promise<void> {
+    const balance = await prisma.user.findUnique({
+      where: {
+        id: req.user?.userId,
+      },
+      select: {
+        availableBalance: true,
+      },
+    });
     try {
       if (!req.user?.userId) {
         res.status(401).json({ message: "Unauthorized: User ID is required" });
+        return;
+      }
+      if (!balance) {
+        res.status(400).json({ message: "valid balance not found" });
+        return;
+      }
+      if (balance.availableBalance < req.body.amount) {
+        res.status(400).json({ message: "Insufficient balance" });
         return;
       }
       const payload: withdrawFundType = req.body;

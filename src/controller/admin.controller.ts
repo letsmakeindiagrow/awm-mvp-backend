@@ -160,6 +160,22 @@ export class AdminController {
               debitAmount: true,
             },
           });
+          const balance = await tx.user.findUnique({
+            where: {
+              id: transaction.userId,
+            },
+            select: {
+              availableBalance: true,
+            },
+          });
+          if (!balance) {
+            res.status(400).json({ message: "User not found" });
+            return;
+          }
+          if (balance.availableBalance < transaction.debitAmount!) {
+            res.status(400).json({ message: "Insufficient balance" });
+            return;
+          }
           const user = await tx.user.update({
             where: {
               id: transaction.userId,

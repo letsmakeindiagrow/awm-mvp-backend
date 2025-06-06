@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import { EMAIL_HOST, EMAIL_PORT } from "../config/env.config.js";
+// import { EMAIL_HOST, EMAIL_PORT } from "../config/env.config.js";
 
 export const sendConfirmationEmail = async (
   email: string,
@@ -9,8 +9,8 @@ export const sendConfirmationEmail = async (
   console.log("Sending email to", email);
   try {
     const transporter = nodemailer.createTransport({
-      host: EMAIL_HOST,
-      port: EMAIL_PORT,
+      // host: EMAIL_HOST,
+      // port: EMAIL_PORT,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,

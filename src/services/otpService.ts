@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client/edge";
 import { randomInt } from "crypto";
-import { sendConfirmationEmail } from "../services/sendConfirmationEmail.js";
+import { sendConfirmationEmail } from "../services/brevoConformation.js";
 import { withAccelerate } from "@prisma/extension-accelerate";
 
 const prisma = new PrismaClient().$extends(withAccelerate());
@@ -45,7 +45,12 @@ export class OTPService {
     });
 
     // Send OTP via email
-    await sendConfirmationEmail(user.email, otpCode, "EMAIL_VERIFICATION");
+    try {
+      await sendConfirmationEmail(user.email, user.firstName, otpCode);
+    } catch (error) {
+      console.error("Error sending email OTP:", error);
+      throw error;
+    }
 
     return otpCode;
   }

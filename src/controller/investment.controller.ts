@@ -19,7 +19,11 @@ const prisma = new PrismaClient().$extends(withAccelerate());
 export class InvestmentController {
   static async getInvestmentPlans(req: Request, res: Response): Promise<void> {
     try {
-      const investmentPlans = await prisma.investmentPlan.findMany();
+      const investmentPlans = await prisma.investmentPlan.findMany({
+        where: {
+          status: "ACTIVE",
+        },
+      });
       res.status(200).json({ investmentPlans });
     } catch (error) {
       console.error("Error in InvestmentController.getInvestmentPlans:", error);
@@ -39,6 +43,7 @@ export class InvestmentController {
       const investmentPlan = await prisma.investmentPlan.findUnique({
         where: {
           id: payload.investmentPlanId,
+          status: "ACTIVE",
         },
       });
       if (!investmentPlan) {
