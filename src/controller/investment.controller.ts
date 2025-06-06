@@ -13,6 +13,7 @@ import {
 } from "../validation/investment.validation.js";
 import { addYears, differenceInDays } from "date-fns";
 import { withAccelerate } from "@prisma/extension-accelerate";
+import { investmentConfirmationMail } from "../services/investmentConfirmation.js";
 
 const prisma = new PrismaClient().$extends(withAccelerate());
 
@@ -119,6 +120,14 @@ export class InvestmentController {
             voucherType: VoucherType.BOOK_VOUCHER,
           },
         });
+        await investmentConfirmationMail(
+          user?.email || "",
+          user?.firstName || "",
+          investmentPlan.name || "",
+          Number(payload.investedAmount),
+          investmentDate.toISOString(),
+          fundTransaction.id
+        );
         return investment;
       });
       res.status(201).json({

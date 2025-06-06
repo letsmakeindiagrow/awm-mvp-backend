@@ -7,6 +7,7 @@ import fyer from "./routes/fyers.routes.js";
 import investor from "./routes/investor.routes.js";
 import uploadRoute from "./routes/upload.route.js";
 import adminRoutes from "./routes/admin.routes.js";
+import { sendEmail } from "./config/brevo.config.js";
 
 const allowedOrigins = [
   "https://login.aadyanviwealth.com",
@@ -47,6 +48,46 @@ app.use("/api/v1/fyers", fyer);
 app.use("/api/v1/investor", investor);
 app.use("/api/v1/documents", uploadRoute);
 app.use("/api/v1/admin", adminRoutes);
-// trigger redeploy - test 1
-// trigger redeploy - test 2
+
+app.post(
+  "/test-email",
+  async function (req: express.Request, res: express.Response): Promise<void> {
+    try {
+      const { apiKey, senderEmail, senderName, recipientEmail } = req.body;
+
+      if (!apiKey || !senderEmail || !senderName || !recipientEmail) {
+        res.status(400).json({
+          success: false,
+          error: "Missing required fields in the request body",
+        });
+        return;
+      }
+
+      const htmlContent = "<p>This is a test email</p>";
+
+      const result = await sendEmail(
+        apiKey,
+        senderEmail,
+        senderName,
+        {
+          email: recipientEmail,
+          name: "rahul",
+        },
+        {
+          subject: "Test Email",
+          htmlContent,
+        }
+      );
+
+      res.json({ success: true, result });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        error: "Failed to send email",
+        details: error.message,
+      });
+    }
+  }
+);
+
 export default app;

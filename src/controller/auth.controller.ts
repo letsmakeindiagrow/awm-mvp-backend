@@ -8,6 +8,7 @@ import {
   RegisterUserDto,
 } from "../validation/auth.validation.js";
 import { OTPService } from "../services/otpService.js";
+import { registrationCompleteMail } from "../services/registrationCompleteMail.js";
 
 const prisma = new PrismaClient().$extends(withAccelerate());
 
@@ -152,6 +153,16 @@ export class AuthController {
       const { userId } = req.body;
       const { otp } = req.body;
 
+      const user = await prisma.user.findUnique({
+        where: {
+          id: userId,
+        },
+        select: {
+          email: true,
+          firstName: true,
+        },
+      });
+
       // Verify OTP
       const isVerified = await OTPService.verifyEmailOTP(userId, otp);
 
@@ -160,6 +171,10 @@ export class AuthController {
           message: "Email verified successfully",
           emailVerified: true,
         });
+        await registrationCompleteMail(
+          user?.email || "",
+          user?.firstName || ""
+        );
         return;
       }
 
