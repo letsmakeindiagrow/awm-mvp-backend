@@ -79,7 +79,6 @@ export class OTPService {
       where: { id: userId },
       data: {
         emailVerified: true,
-        verificationState: "VERIFIED",
       },
     });
 

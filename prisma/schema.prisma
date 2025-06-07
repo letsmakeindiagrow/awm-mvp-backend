@@ -11,6 +11,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+   directUrl = env("DIRECT_DATABASE_URL")
 }
 
 enum VerificationStatus {
@@ -46,6 +47,7 @@ enum WithdrawalStatus {
 enum WithdrawalType {
   PRE_MATURITY_EXIT
   SCHEDULED_PAYOUT
+  MATURITY_EXIT
 }
 
 enum ProductType {

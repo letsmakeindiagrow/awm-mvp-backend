@@ -10,10 +10,12 @@ import { Decimal } from "decimal.js";
 import {
   subscribeInvestmentType,
   withdrawPreMaturityType,
+  withdrawMaturityType,
 } from "../validation/investment.validation.js";
 import { addYears, differenceInDays } from "date-fns";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { investmentConfirmationMail } from "../services/investmentConfirmation.js";
+import { calculateWithdrawalDetails } from "../services/withdrawHelper.js";
 
 const prisma = new PrismaClient().$extends(withAccelerate());
 
@@ -204,50 +206,25 @@ export class InvestmentController {
         return;
       }
       const payload: withdrawPreMaturityType = req.body;
-      const investment = await prisma.userInvestment.findUnique({
-        where: {
-          id: payload.investmentPlanId,
-          userId: req.user.userId,
-        },
-        include: {
-          investmentPlan: true,
-        },
+      const withdrawalDetails = await calculateWithdrawalDetails({
+        investmentPlanId: payload.investmentPlanId,
+        userId: req.user.userId,
       });
-      if (!investment) {
-        res.status(404).json({ message: "Investment not found" });
+      if (!withdrawalDetails.success) {
+        res.status(400).json({ message: withdrawalDetails.message });
         return;
       }
-
-      const T_elaspsed = differenceInDays(
-        new Date(),
-        investment.investmentDate
-      );
-      const T_lockIn = investment.investmentPlan.investmentTerm * 365;
-      const P_completed = (T_elaspsed / T_lockIn) * 100;
-      let lockInStage = 0;
-      let expensePercentageApplied = 0;
-      if (0 < P_completed && P_completed <= 25) {
-        lockInStage = 1;
-        expensePercentageApplied = 5;
-      } else if (25 < P_completed && P_completed <= 50) {
-        lockInStage = 2;
-        expensePercentageApplied = 3.5;
-      } else if (50 < P_completed && P_completed <= 75) {
-        lockInStage = 3;
-        expensePercentageApplied = 2.5;
-      } else if (75 < P_completed && P_completed <= 100) {
-        lockInStage = 4;
-        expensePercentageApplied = 0;
+      if (!withdrawalDetails.data) {
+        res.status(400).json({ message: "Withdrawal details not found" });
+        return;
       }
-
-      const principalAsDecimal = new Decimal(investment.investedAmount);
-      const gainComponent = principalAsDecimal
-        .times(investment.investmentPlan.roiAAR.div(100))
-        .times(new Decimal(T_elaspsed).div(365));
-
-      const totalGain: Decimal = principalAsDecimal.plus(gainComponent);
-      const exitExpense = totalGain.times(expensePercentageApplied).div(100);
-      const NetPayout = totalGain.minus(exitExpense);
+      const {
+        NetPayout,
+        exitExpense,
+        totalGain,
+        lockInStage,
+        expensePercentageApplied,
+      } = withdrawalDetails.data;
 
       const transaction = await prisma.$transaction(async (tx) => {
         const fundTransaction = await tx.fundTransaction.create({
@@ -271,7 +248,7 @@ export class InvestmentController {
         const withdrawal = await tx.withdrawalDetails.create({
           data: {
             userId: req.user?.userId!,
-            userInvestmentId: investment.id,
+            userInvestmentId: payload.investmentPlanId,
             type: WithdrawalType.PRE_MATURITY_EXIT,
             netAmountPaid: NetPayout,
             grossAmount: totalGain,
@@ -305,50 +282,25 @@ export class InvestmentController {
         return;
       }
       const { investmentPlanId } = req.params;
-      const investment = await prisma.userInvestment.findUnique({
-        where: {
-          id: investmentPlanId,
-          userId: req.user.userId,
-        },
-        include: {
-          investmentPlan: true,
-        },
+      const withdrawalDetails = await calculateWithdrawalDetails({
+        investmentPlanId,
+        userId: req.user.userId,
       });
-      if (!investment) {
-        res.status(404).json({ message: "Investment not found" });
+      if (!withdrawalDetails.success) {
+        res.status(400).json({ message: withdrawalDetails.message });
         return;
       }
-
-      const T_elaspsed = differenceInDays(
-        new Date(),
-        investment.investmentDate
-      );
-      const T_lockIn = investment.investmentPlan.investmentTerm * 365;
-      const P_completed = (T_elaspsed / T_lockIn) * 100;
-      let lockInStage = 0;
-      let expensePercentageApplied = 0;
-      if (0 < P_completed && P_completed <= 25) {
-        lockInStage = 1;
-        expensePercentageApplied = 5;
-      } else if (25 < P_completed && P_completed <= 50) {
-        lockInStage = 2;
-        expensePercentageApplied = 3.5;
-      } else if (50 < P_completed && P_completed <= 75) {
-        lockInStage = 3;
-        expensePercentageApplied = 2.5;
-      } else if (75 < P_completed && P_completed <= 100) {
-        lockInStage = 4;
-        expensePercentageApplied = 0;
+      if (!withdrawalDetails.data) {
+        res.status(400).json({ message: "Withdrawal details not found" });
+        return;
       }
-
-      const principalAsDecimal = new Decimal(investment.investedAmount);
-      const gainComponent = principalAsDecimal
-        .times(investment.investmentPlan.roiAAR.div(100))
-        .times(new Decimal(T_elaspsed).div(365));
-
-      const totalGain: Decimal = principalAsDecimal.plus(gainComponent);
-      const exitExpense = totalGain.times(expensePercentageApplied).div(100);
-      const NetPayout = totalGain.minus(exitExpense);
+      const {
+        lockInStage,
+        expensePercentageApplied,
+        exitExpense,
+        NetPayout,
+        totalGain,
+      } = withdrawalDetails.data;
       res.status(200).json({
         message: "Withdrawal details fetched successfully",
         withdrawalDetails: {
@@ -481,6 +433,73 @@ export class InvestmentController {
     } catch (error) {
       console.error("Error in InvestmentController.logout:", error);
       res.status(500).json({ message: "Internal server error" });
+    }
+  }
+  static async withdrawMaturity(
+    userId: string,
+    investmentPlanId: string
+  ): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    try {
+      const withdrawalDetails = await calculateWithdrawalDetails({
+        userId,
+        investmentPlanId,
+      });
+      if (!withdrawalDetails.success) {
+        return {
+          success: false,
+          message: withdrawalDetails.message,
+        };
+      }
+      if (!withdrawalDetails.data) {
+        return {
+          success: false,
+          message: "Withdrawal details not found",
+        };
+      }
+      const {
+        NetPayout,
+        exitExpense,
+        totalGain,
+        lockInStage,
+        expensePercentageApplied,
+      } = withdrawalDetails.data;
+      const transactions = await prisma.$transaction(async (tx) => {
+        const fundTransaction = await tx.fundTransaction.create({
+          data: {
+            userId,
+            creditAmount: NetPayout,
+            type: TransactionType.DEPOSIT,
+            method: TransactionMethod.NEFT,
+            voucherType: VoucherType.BOOK_VOUCHER,
+          },
+        });
+        const withdrawal = await tx.withdrawalDetails.create({
+          data: {
+            userId,
+            userInvestmentId: investmentPlanId,
+            type: WithdrawalType.MATURITY_EXIT,
+            grossAmount: totalGain,
+            netAmountPaid: NetPayout,
+            lockInStageAchieved: lockInStage,
+            expensePercentageApplied: expensePercentageApplied,
+            expenseAmountDeducted: exitExpense,
+            fundTransactionId: fundTransaction.id,
+          },
+        });
+      });
+      return {
+        success: true,
+        message: "Maturity request submitted successfully",
+      };
+    } catch (error) {
+      console.error("Error in InvestmentController.withdrawMaturity:", error);
+      return {
+        success: false,
+        message: "Internal server error",
+      };
     }
   }
 }
