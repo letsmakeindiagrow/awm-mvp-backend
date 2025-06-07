@@ -207,8 +207,7 @@ export class InvestmentController {
       }
       const payload: withdrawPreMaturityType = req.body;
       const withdrawalDetails = await calculateWithdrawalDetails({
-        investmentPlanId: payload.investmentPlanId,
-        userId: req.user.userId,
+        userInvestmentId: payload.userInvestmentId,
       });
       if (!withdrawalDetails.success) {
         res.status(400).json({ message: withdrawalDetails.message });
@@ -281,10 +280,9 @@ export class InvestmentController {
         res.status(401).json({ message: "Unauthorized: User ID is required" });
         return;
       }
-      const { investmentPlanId } = req.params;
+      const { userInvestmentId } = req.params;
       const withdrawalDetails = await calculateWithdrawalDetails({
-        investmentPlanId,
-        userId: req.user.userId,
+        userInvestmentId,
       });
       if (!withdrawalDetails.success) {
         res.status(400).json({ message: withdrawalDetails.message });
@@ -437,15 +435,15 @@ export class InvestmentController {
   }
   static async withdrawMaturity(
     userId: string,
-    investmentPlanId: string
+    investmentPlanId: string,
+    userInvestmentId: string
   ): Promise<{
     success: boolean;
     message: string;
   }> {
     try {
       const withdrawalDetails = await calculateWithdrawalDetails({
-        userId,
-        investmentPlanId,
+        userInvestmentId,
       });
       if (!withdrawalDetails.success) {
         return {

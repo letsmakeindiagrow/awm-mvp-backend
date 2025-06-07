@@ -8,10 +8,12 @@ export const subscribeInvestmentSchema = z.object({
 
 export const withdrawPreMaturitySchema = z.object({
   investmentPlanId: z.string(),
+  userInvestmentId: z.string(),
 });
 
 export const withdrawMaturitySchema = z.object({
   investmentPlanId: z.string(),
+  userInvestmentId: z.string(),
 });
 
 export type subscribeInvestmentType = z.infer<typeof subscribeInvestmentSchema>;
