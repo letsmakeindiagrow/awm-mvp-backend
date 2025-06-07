@@ -2,6 +2,7 @@ import express from "express";
 import { AdminController } from "../controller/admin.controller.js";
 import { verifyRequest } from "../middleware/admin.verify.js";
 import { validateRequest } from "../middleware/validateRequest.js";
+import { uploader } from "../config/multer.config.js";
 import {
   createInvestmentPlanSchema,
   createNewUserSchema,
@@ -63,9 +64,15 @@ router.post(
   AdminController.editInvestmentPlan
 );
 router.post(
-  "/create-new-user",
-  validateRequest(createNewUserSchema),
+  "/create-user",
   verifyRequest,
+  uploader.fields([
+    { name: 'panAttachment', maxCount: 1 },
+    { name: 'aadharFront', maxCount: 1 },
+    { name: 'aadharBack', maxCount: 1 },
+    { name: 'bankProof', maxCount: 1 }
+  ]),
+  validateRequest(createNewUserSchema),
   AdminController.createNewUser
 );
 export default router;
