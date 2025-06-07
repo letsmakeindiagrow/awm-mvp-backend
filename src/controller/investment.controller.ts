@@ -206,9 +206,9 @@ export class InvestmentController {
         return;
       }
       const payload: withdrawPreMaturityType = req.body;
-      const withdrawalDetails = await calculateWithdrawalDetails({
-        userInvestmentId: payload.userInvestmentId,
-      });
+      const withdrawalDetails = await calculateWithdrawalDetails(
+        payload.userInvestmentId
+      );
       if (!withdrawalDetails.success) {
         res.status(400).json({ message: withdrawalDetails.message });
         return;
@@ -281,9 +281,9 @@ export class InvestmentController {
         return;
       }
       const { userInvestmentId } = req.params;
-      const withdrawalDetails = await calculateWithdrawalDetails({
-        userInvestmentId,
-      });
+      const withdrawalDetails = await calculateWithdrawalDetails(
+        userInvestmentId
+      );
       if (!withdrawalDetails.success) {
         res.status(400).json({ message: withdrawalDetails.message });
         return;
@@ -442,9 +442,9 @@ export class InvestmentController {
     message: string;
   }> {
     try {
-      const withdrawalDetails = await calculateWithdrawalDetails({
-        userInvestmentId,
-      });
+      const withdrawalDetails = await calculateWithdrawalDetails(
+        userInvestmentId
+      );
       if (!withdrawalDetails.success) {
         return {
           success: false,

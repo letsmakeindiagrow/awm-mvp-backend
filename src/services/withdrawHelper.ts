@@ -5,9 +5,9 @@ import { withAccelerate } from "@prisma/extension-accelerate";
 
 const prisma = new PrismaClient().$extends(withAccelerate());
 
-export async function calculateWithdrawalDetails(payload: {
-  userInvestmentId: string;
-}): Promise<{
+export async function calculateWithdrawalDetails(
+  userInvestmentId: string
+): Promise<{
   success: boolean;
   message: string;
   data?: {
@@ -22,7 +22,7 @@ export async function calculateWithdrawalDetails(payload: {
 }> {
   const investment = await prisma.userInvestment.findUnique({
     where: {
-      id: payload.userInvestmentId,
+      id: userInvestmentId,
     },
     include: {
       investmentPlan: true,
