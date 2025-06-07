@@ -595,7 +595,6 @@ export class AdminController {
   static async createNewUser(req: Request, res: Response): Promise<void> {
     try {
       const payload: createNewUserSchemaType = req.body;
-      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
       const existingUser = await prisma.user.findFirst({
         where: {
@@ -626,7 +625,7 @@ export class AdminController {
           firstName: payload.firstName,
           lastName: payload.lastName,
           dateOfBirth: payload.dateOfBirth,
-          password: hashedPassword,
+          password: hashedPassword, // Store hashed password
           verificationState: "PENDING",
           mobileVerified: false,
           emailVerified: false,
@@ -645,47 +644,26 @@ export class AdminController {
 
       // If identity details are provided, create them
       if (payload.identityDetails) {
-        const identityDetails = {
-          ...payload.identityDetails,
-          panAttachment: files['panAttachment']?.[0]?.location,
-          aadharFront: files['aadharFront']?.[0]?.location,
-          aadharBack: files['aadharBack']?.[0]?.location,
-        };
-
         await prisma.identityDetails.create({
           data: {
             userId: user.id,
-            ...identityDetails,
+            ...payload.identityDetails,
           },
         });
       }
 
       // If bank details are provided, create them
       if (payload.bankDetails) {
-        const bankDetails = {
-          ...payload.bankDetails,
-          proofAttachment: files['bankProof']?.[0]?.location,
-        };
-
         await prisma.bankDetails.create({
           data: {
             userId: user.id,
-            ...bankDetails,
+            ...payload.bankDetails,
           },
         });
       }
-
-      res.status(201).json({
-        message: "User created successfully",
-        user: {
-          id: user.id,
-          email: user.email,
-          mobileNumber: user.mobileNumber,
-        },
-      });
+      res.status(200).json({ message: "User created successfully", user });
     } catch (error) {
-      console.error("Error creating user:", error);
-      res.status(500).json({ message: "Failed to create user" });
+      console.error("Error in AdminController.createNewUser:", error);
     }
   }
 }

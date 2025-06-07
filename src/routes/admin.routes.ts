@@ -64,15 +64,9 @@ router.post(
   AdminController.editInvestmentPlan
 );
 router.post(
-  "/create-user",
-  verifyRequest,
-  uploader.fields([
-    { name: 'panAttachment', maxCount: 1 },
-    { name: 'aadharFront', maxCount: 1 },
-    { name: 'aadharBack', maxCount: 1 },
-    { name: 'bankProof', maxCount: 1 }
-  ]),
+  "/create-new-user",
   validateRequest(createNewUserSchema),
+  verifyRequest,
   AdminController.createNewUser
 );
 export default router;

@@ -43,10 +43,10 @@ export const createNewUserSchema = z.object({
   identityDetails: z
     .object({
       panNumber: z.string().length(10, "PAN must be 10 characters"),
-      panAttachment: z.instanceof(File).optional(),
+      panAttachment: z.string().url("Invalid URL"),
       aadharNumber: z.string().length(12, "Aadhar number must be 12 digits"),
-      aadharFront: z.instanceof(File).optional(),
-      aadharBack: z.instanceof(File).optional(),
+      aadharFront: z.string().url("Invalid URL"),
+      aadharBack: z.string().url("Invalid URL"),
     })
     .optional(),
   bankDetails: z
@@ -56,7 +56,7 @@ export const createNewUserSchema = z.object({
         .min(8, "Account number must be at least 8 digits"),
       ifscCode: z.string().length(11, "Invalid IFSC Code"),
       branchName: z.string(),
-      proofAttachment: z.instanceof(File).optional(),
+      proofAttachment: z.string().url("Invalid URL"),
     })
     .optional(),
 });
