@@ -5,6 +5,8 @@ import {
   TransactionType,
   WithdrawalType,
   VoucherType,
+  UserInvestmentStatus,
+  WithdrawalFrequency,
 } from "@prisma/client/edge";
 import { Decimal } from "decimal.js";
 import {
@@ -12,10 +14,11 @@ import {
   withdrawPreMaturityType,
   withdrawMaturityType,
 } from "../validation/investment.validation.js";
-import { addYears, differenceInDays } from "date-fns";
+import { addDays, addYears, differenceInDays, isSameDay } from "date-fns";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { investmentConfirmationMail } from "../services/investmentConfirmation.js";
 import { calculateWithdrawalDetails } from "../services/withdrawHelper.js";
+import { userInfo } from "os";
 
 const prisma = new PrismaClient().$extends(withAccelerate());
 
@@ -255,6 +258,14 @@ export class InvestmentController {
             expensePercentageApplied: expensePercentageApplied,
             expenseAmountDeducted: exitExpense,
             fundTransactionId: fundTransaction.id,
+          },
+        });
+        await tx.userInvestment.update({
+          where: {
+            id: payload.userInvestmentId,
+          },
+          data: {
+            status: UserInvestmentStatus.WITHDRAWN_PREMATURELY,
           },
         });
       });
@@ -520,6 +531,110 @@ export class InvestmentController {
       console.error("Error in InvestmentController.getUserInfo:", error);
       res.status(500).json({ message: "Internal server error" });
       return;
+    }
+  }
+  static async processQuaterlyPayout(userId: string): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    try {
+      const Investments = await prisma.userInvestment.findMany({
+        where: {
+          userId: userId,
+          status: UserInvestmentStatus.ACTIVE,
+          withdrawalFrequency: WithdrawalFrequency.QUARTERLY,
+        },
+        include: {
+          investmentPlan: true,
+        },
+      });
+      for (const investment of Investments) {
+        const withdrawalDetails = await prisma.withdrawalDetails.findFirst({
+          where: {
+            userInvestmentId: investment.id,
+            type: WithdrawalType.SCHEDULED_PAYOUT,
+          },
+          orderBy: {
+            initiatedAt: "asc",
+          },
+          take: 1,
+        });
+        if (!withdrawalDetails) {
+          const firstInvestmentDate = investment.investmentDate;
+          const nextPayoutDate = addDays(firstInvestmentDate, 90);
+          if (isSameDay(nextPayoutDate, new Date())) {
+            const principalAsDecimal = new Decimal(investment.investedAmount);
+            const gainComponent = principalAsDecimal
+              .times(investment.investmentPlan.roiAAR.div(100))
+              .times(new Decimal(90).div(365));
+
+            const transactions = await prisma.$transaction(async (tx) => {
+              const fundTransaction = await tx.fundTransaction.create({
+                data: {
+                  userId: userId,
+                  creditAmount: gainComponent,
+                  type: TransactionType.DEPOSIT,
+                  method: TransactionMethod.NEFT,
+                  voucherType: VoucherType.BOOK_VOUCHER,
+                },
+              });
+              const withdrawal = await tx.withdrawalDetails.create({
+                data: {
+                  userId: userId,
+                  userInvestmentId: investment.id,
+                  type: WithdrawalType.SCHEDULED_PAYOUT,
+                  netAmountPaid: gainComponent,
+                  grossAmount: gainComponent,
+                  fundTransactionId: fundTransaction.id,
+                },
+              });
+            });
+          }
+        } else {
+          const nextPayoutDate = addDays(withdrawalDetails.initiatedAt, 90);
+          if (isSameDay(nextPayoutDate, new Date())) {
+            const principalAsDecimal = new Decimal(investment.investedAmount);
+            const gainComponent = principalAsDecimal
+              .times(investment.investmentPlan.roiAAR.div(100))
+              .times(new Decimal(90).div(365));
+
+            const transactions = await prisma.$transaction(async (tx) => {
+              const fundTransaction = await tx.fundTransaction.create({
+                data: {
+                  userId: userId,
+                  creditAmount: gainComponent,
+                  type: TransactionType.DEPOSIT,
+                  method: TransactionMethod.NEFT,
+                  voucherType: VoucherType.BOOK_VOUCHER,
+                },
+              });
+              const withdrawal = await tx.withdrawalDetails.create({
+                data: {
+                  userId: userId,
+                  userInvestmentId: investment.id,
+                  type: WithdrawalType.SCHEDULED_PAYOUT,
+                  netAmountPaid: gainComponent,
+                  grossAmount: gainComponent,
+                  fundTransactionId: fundTransaction.id,
+                },
+              });
+            });
+          }
+        }
+      }
+      return {
+        success: true,
+        message: "Quaterly payout checked and processed successfully",
+      };
+    } catch (error) {
+      console.error(
+        "Error in InvestmentController.processQuaterlyPayout:",
+        error
+      );
+      return {
+        success: false,
+        message: "Internal server error",
+      };
     }
   }
 }

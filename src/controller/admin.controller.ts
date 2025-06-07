@@ -337,6 +337,11 @@ export class AdminController {
       const { userId } = req.params;
       const user = await prisma.user.findUnique({
         where: { id: userId },
+        include: {
+          address: true,
+          identityDetails: true,
+          bankDetails: true,
+        },
       });
       res.status(200).json({ user });
     } catch (error) {
