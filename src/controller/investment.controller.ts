@@ -281,6 +281,10 @@ export class InvestmentController {
         return;
       }
       const { userInvestmentId } = req.params;
+      if (!userInvestmentId) {
+        res.status(400).json({ message: "User investment ID is required" });
+        return;
+      }
       const withdrawalDetails = await calculateWithdrawalDetails(
         userInvestmentId
       );
