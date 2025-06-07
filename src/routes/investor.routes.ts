@@ -54,4 +54,6 @@ router.get("/totalCurrentValue", InvestmentController.totalCurrentValue);
 router.get("/totalInvestments", InvestmentController.totalInvestments);
 router.get("/logout", InvestmentController.logout);
 
+router.get("/getUserInfo", InvestmentController.getUserInfo);
+
 export default router;

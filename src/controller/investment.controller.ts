@@ -504,4 +504,22 @@ export class InvestmentController {
       };
     }
   }
+  static async getUserInfo(req: Request, res: Response): Promise<void> {
+    try {
+      if (!req.user?.userId) {
+        res.status(401).json({ message: "Unauthorized: User ID is required" });
+        return;
+      }
+      const user = await prisma.user.findUnique({
+        where: {
+          id: req.user.userId,
+        },
+      });
+      res.status(200).json({ user });
+    } catch (error) {
+      console.error("Error in InvestmentController.getUserInfo:", error);
+      res.status(500).json({ message: "Internal server error" });
+      return;
+    }
+  }
 }
