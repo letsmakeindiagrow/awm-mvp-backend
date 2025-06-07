@@ -43,7 +43,7 @@ router.get("/getBalance", InvestmentController.getBalance);
 router.get("/ledger", FundsController.ledger);
 
 router.get(
-  "/getWithdrawalDetails/:investmentPlanId",
+  "/getWithdrawalDetails/:userInvestmentId",
   InvestmentController.getWithdrawalDetails
 );
 
