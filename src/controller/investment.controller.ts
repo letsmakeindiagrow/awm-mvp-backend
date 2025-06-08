@@ -231,6 +231,15 @@ export class InvestmentController {
         expensePercentageApplied,
       } = withdrawalDetails.data;
 
+      const userInvestment = await prisma.userInvestment.findUnique({
+        where: {
+          id: payload.userInvestmentId,
+        },
+      });
+      if (userInvestment?.status !== UserInvestmentStatus.ACTIVE) {
+        res.status(400).json({ message: "Investment is not active" });
+        return;
+      }
       const transaction = await prisma.$transaction(async (tx) => {
         // Get current user balance to calculate new balance after transaction
         const currentUser = await tx.user.findUnique({
