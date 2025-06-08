@@ -85,17 +85,6 @@ export class AdminController {
               balance: user.availableBalance,
             },
           });
-          if (transaction.voucherType === VoucherType.BOOK_VOUCHER) {
-            await tx.withdrawalDetails.update({
-              where: {
-                fundTransactionId: transactionsId,
-              },
-              data: {
-                status: WithdrawalStatus.COMPLETED,
-                processedAt: new Date(),
-              },
-            });
-          }
         });
         res.status(200).json({
           message: "Transaction approved",

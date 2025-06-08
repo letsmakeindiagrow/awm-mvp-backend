@@ -11,10 +11,11 @@ const Ids = await prisma.user.findMany({
   },
 });
 
-cron.schedule("* * * * *", () => {
+cron.schedule("0 7 * * *", () => {
   console.log("quaterly payout job running");
   for (const id of Ids) {
     InvestmentController.processQuaterlyPayout(id.id);
+    InvestmentController.annualPayout(id.id);
   }
 });
 ``;
