@@ -485,9 +485,10 @@ export class InvestmentController {
     try {
       res.clearCookie("auth_token", {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        secure: true,
+        sameSite: "none",
         domain: domain,
+        path: "/",
       });
       res.status(200).json({ message: "Logout successful" });
     } catch (error) {
