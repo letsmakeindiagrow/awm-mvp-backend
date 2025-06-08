@@ -251,7 +251,7 @@ export class InvestmentController {
         const withdrawal = await tx.withdrawalDetails.create({
           data: {
             userId: req.user?.userId!,
-            userInvestmentId: payload.investmentPlanId,
+            userInvestmentId: payload.userInvestmentId,
             type: WithdrawalType.PRE_MATURITY_EXIT,
             netAmountPaid: NetPayout,
             grossAmount: totalGain,
