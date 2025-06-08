@@ -24,6 +24,8 @@ import { userInfo } from "os";
 
 const prisma = new PrismaClient().$extends(withAccelerate());
 
+const domain = process.env.COOKIE_DOMAIN;
+
 export class InvestmentController {
   static async getInvestmentPlans(req: Request, res: Response): Promise<void> {
     try {
@@ -485,6 +487,7 @@ export class InvestmentController {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
+        domain: domain,
       });
       res.status(200).json({ message: "Logout successful" });
     } catch (error) {
