@@ -162,6 +162,7 @@ export class InvestmentController {
         include: {
           investmentPlan: {
             select: {
+              name: true,
               investmentTerm: true,
               roiAAR: true,
               type: true,
@@ -549,6 +550,7 @@ export class InvestmentController {
         },
       });
       for (const investment of Investments) {
+        // add a check to see if the investment is active and maturity is reached if so then call the maturity withdrawal function
         const withdrawalDetails = await prisma.withdrawalDetails.findFirst({
           where: {
             userInvestmentId: investment.id,
