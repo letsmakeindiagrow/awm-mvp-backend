@@ -7,6 +7,8 @@ import {
   VoucherType,
   UserInvestmentStatus,
   WithdrawalFrequency,
+  TransactionStatus,
+  WithdrawalStatus,
 } from "@prisma/client/edge";
 import { Decimal } from "decimal.js";
 import {
@@ -230,6 +232,23 @@ export class InvestmentController {
       } = withdrawalDetails.data;
 
       const transaction = await prisma.$transaction(async (tx) => {
+        // Get current user balance to calculate new balance after transaction
+        const currentUser = await tx.user.findUnique({
+          where: { id: req.user?.userId! },
+          select: { availableBalance: true },
+        });
+
+        // Update user balance by adding the net payout
+        const updatedUser = await tx.user.update({
+          where: { id: req.user?.userId! },
+          data: {
+            availableBalance: {
+              increment: NetPayout,
+            },
+          },
+        });
+
+        // Create credit transaction (auto-approved)
         const fundTransaction = await tx.fundTransaction.create({
           data: {
             userId: req.user?.userId!,
@@ -237,8 +256,12 @@ export class InvestmentController {
             type: TransactionType.DEPOSIT,
             method: TransactionMethod.NEFT,
             voucherType: VoucherType.BOOK_VOUCHER,
+            status: TransactionStatus.APPROVED,
+            balance: updatedUser.availableBalance,
           },
         });
+
+        // Create debit transaction for penalty/expense (auto-approved)
         const fundTransaction_new = await tx.fundTransaction.create({
           data: {
             userId: req.user?.userId!,
@@ -246,8 +269,12 @@ export class InvestmentController {
             type: TransactionType.WITHDRAWAL,
             method: TransactionMethod.NEFT,
             voucherType: VoucherType.JOURNAL_VOUCHER,
+            status: TransactionStatus.APPROVED,
+            balance: updatedUser.availableBalance,
           },
         });
+
+        // Create withdrawal details record (auto-completed)
         const withdrawal = await tx.withdrawalDetails.create({
           data: {
             userId: req.user?.userId!,
@@ -259,8 +286,12 @@ export class InvestmentController {
             expensePercentageApplied: expensePercentageApplied,
             expenseAmountDeducted: exitExpense,
             fundTransactionId: fundTransaction.id,
+            status: WithdrawalStatus.COMPLETED,
+            processedAt: new Date(),
           },
         });
+
+        // Update investment status
         await tx.userInvestment.update({
           where: {
             id: payload.userInvestmentId,
@@ -269,9 +300,12 @@ export class InvestmentController {
             status: UserInvestmentStatus.WITHDRAWN_PREMATURELY,
           },
         });
+
+        return { fundTransaction, withdrawal };
       });
+
       res.status(200).json({
-        message: "Withdrawal request submitted successfully",
+        message: "Withdrawal completed successfully",
         transaction,
       });
     } catch (error) {
@@ -481,6 +515,17 @@ export class InvestmentController {
         expensePercentageApplied,
       } = withdrawalDetails.data;
       const transactions = await prisma.$transaction(async (tx) => {
+        // Update user balance by adding the net payout
+        const updatedUser = await tx.user.update({
+          where: { id: userId },
+          data: {
+            availableBalance: {
+              increment: NetPayout,
+            },
+          },
+        });
+
+        // Create credit transaction (auto-approved)
         const fundTransaction = await tx.fundTransaction.create({
           data: {
             userId,
@@ -488,8 +533,12 @@ export class InvestmentController {
             type: TransactionType.DEPOSIT,
             method: TransactionMethod.NEFT,
             voucherType: VoucherType.BOOK_VOUCHER,
+            status: TransactionStatus.APPROVED,
+            balance: updatedUser.availableBalance,
           },
         });
+
+        // Create withdrawal details record (auto-completed)
         const withdrawal = await tx.withdrawalDetails.create({
           data: {
             userId,
@@ -501,12 +550,20 @@ export class InvestmentController {
             expensePercentageApplied: expensePercentageApplied,
             expenseAmountDeducted: exitExpense,
             fundTransactionId: fundTransaction.id,
+            status: WithdrawalStatus.COMPLETED,
+            processedAt: new Date(),
           },
+        });
+
+        // Update investment status
+        await tx.userInvestment.update({
+          where: { id: userInvestmentId },
+          data: { status: UserInvestmentStatus.MATURED },
         });
       });
       return {
         success: true,
-        message: "Maturity request submitted successfully",
+        message: "Maturity withdrawal completed successfully",
       };
     } catch (error) {
       console.error("Error in InvestmentController.withdrawMaturity:", error);
@@ -571,6 +628,16 @@ export class InvestmentController {
               .times(new Decimal(90).div(365));
 
             const transactions = await prisma.$transaction(async (tx) => {
+              // Update user balance
+              const updatedUser = await tx.user.update({
+                where: { id: userId },
+                data: {
+                  availableBalance: {
+                    increment: gainComponent,
+                  },
+                },
+              });
+
               const fundTransaction = await tx.fundTransaction.create({
                 data: {
                   userId: userId,
@@ -578,6 +645,8 @@ export class InvestmentController {
                   type: TransactionType.DEPOSIT,
                   method: TransactionMethod.NEFT,
                   voucherType: VoucherType.BOOK_VOUCHER,
+                  status: TransactionStatus.APPROVED,
+                  balance: updatedUser.availableBalance,
                 },
               });
               const withdrawal = await tx.withdrawalDetails.create({
@@ -588,6 +657,8 @@ export class InvestmentController {
                   netAmountPaid: gainComponent,
                   grossAmount: gainComponent,
                   fundTransactionId: fundTransaction.id,
+                  status: WithdrawalStatus.COMPLETED,
+                  processedAt: new Date(),
                 },
               });
             });
@@ -601,6 +672,16 @@ export class InvestmentController {
               .times(new Decimal(90).div(365));
 
             const transactions = await prisma.$transaction(async (tx) => {
+              // Update user balance
+              const updatedUser = await tx.user.update({
+                where: { id: userId },
+                data: {
+                  availableBalance: {
+                    increment: gainComponent,
+                  },
+                },
+              });
+
               const fundTransaction = await tx.fundTransaction.create({
                 data: {
                   userId: userId,
@@ -608,6 +689,8 @@ export class InvestmentController {
                   type: TransactionType.DEPOSIT,
                   method: TransactionMethod.NEFT,
                   voucherType: VoucherType.BOOK_VOUCHER,
+                  status: TransactionStatus.APPROVED,
+                  balance: updatedUser.availableBalance,
                 },
               });
               const withdrawal = await tx.withdrawalDetails.create({
@@ -618,6 +701,8 @@ export class InvestmentController {
                   netAmountPaid: gainComponent,
                   grossAmount: gainComponent,
                   fundTransactionId: fundTransaction.id,
+                  status: WithdrawalStatus.COMPLETED,
+                  processedAt: new Date(),
                 },
               });
             });

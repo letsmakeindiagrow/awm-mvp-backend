@@ -80,7 +80,7 @@ enum TransactionStatus {
 model User {
   id                String            @id @default(uuid())
   password          String
-  referralCode      String?           @unique
+  referralCode      String?           
   mobileNumber      String            @unique
   mobileVerified    Boolean           @default(false)
   email             String            @unique
