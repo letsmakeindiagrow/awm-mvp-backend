@@ -52,7 +52,7 @@ router.post("/withdrawPreMaturity", InvestmentController.withdrawPreMaturity);
 router.get("/totalInvestment", InvestmentController.totalInvestment);
 router.get("/totalCurrentValue", InvestmentController.totalCurrentValue);
 router.get("/totalInvestments", InvestmentController.totalInvestments);
-router.get("/logout", InvestmentController.logout);
+router.post("/logout", InvestmentController.logout);
 
 router.get("/getUserInfo", InvestmentController.getUserInfo);
 
