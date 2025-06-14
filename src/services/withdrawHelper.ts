@@ -6,7 +6,8 @@ import { withAccelerate } from "@prisma/extension-accelerate";
 const prisma = new PrismaClient().$extends(withAccelerate());
 
 export async function calculateWithdrawalDetails(
-  userInvestmentId: string
+  userInvestmentId: string,
+  lastWithdrawalDate?: Date
 ): Promise<{
   success: boolean;
   message: string;
@@ -36,7 +37,10 @@ export async function calculateWithdrawalDetails(
     };
   }
 
-  const T_elaspsed = differenceInDays(new Date(), investment.investmentDate);
+  const T_elaspsed = differenceInDays(
+    new Date(),
+    lastWithdrawalDate || investment.investmentDate
+  );
   const T_lockIn = investment.investmentPlan.investmentTerm * 365;
   const P_completed = (T_elaspsed / T_lockIn) * 100;
   let lockInStage = 0;

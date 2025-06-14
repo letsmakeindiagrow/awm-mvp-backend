@@ -188,7 +188,6 @@ model InvestmentPlan {
   maturityValue      Decimal       // Calculated: minInvestment + totalGain
   status             ProductStatus @default(ACTIVE)
   type               ProductType
-  payoutInstallmentCount Int?          // For LUMPSUM type with QUARTERLY/ANNUAL withdrawalFrequency: Number of installments post-maturity.
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
   investments        UserInvestment[]
@@ -205,6 +204,7 @@ model UserInvestment {
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
   userId             String
+  payoutInstallmentCount Int?          
   user               User                 @relation(fields: [userId], references: [id])
   investmentPlanId   String
   investmentPlan     InvestmentPlan       @relation(fields: [investmentPlanId], references: [id])
@@ -223,6 +223,8 @@ model WithdrawalDetails {
 
   type                     WithdrawalType
   status                   WithdrawalStatus @default(PROCESSING)
+
+  installmentLeft          Int?
 
   initiatedAt              DateTime         @default(now())
   processedAt              DateTime?

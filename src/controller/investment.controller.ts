@@ -9,6 +9,7 @@ import {
   WithdrawalFrequency,
   TransactionStatus,
   WithdrawalStatus,
+  ProductType,
 } from "@prisma/client/edge";
 import { Decimal } from "decimal.js";
 import {
@@ -20,6 +21,7 @@ import { addDays, addYears, differenceInDays, isSameDay } from "date-fns";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { investmentConfirmationMail } from "../services/investmentConfirmation.js";
 import { calculateWithdrawalDetails } from "../services/withdrawHelper.js";
+import { date } from "zod";
 
 const prisma = new PrismaClient().$extends(withAccelerate());
 
@@ -92,6 +94,16 @@ export class InvestmentController {
         return;
       }
 
+      let payoutInstallmentCount = 0;
+
+      if (payload.withdrawalFrequency === WithdrawalFrequency.QUARTERLY) {
+        payoutInstallmentCount = investmentPlan.investmentTerm * 4;
+      }
+
+      if (payload.withdrawalFrequency === WithdrawalFrequency.ANNUAL) {
+        payoutInstallmentCount = investmentPlan.investmentTerm;
+      }
+
       const investmentDate = new Date();
       const maturityDate = addYears(
         investmentDate,
@@ -117,6 +129,7 @@ export class InvestmentController {
             investmentDate,
             maturityDate,
             withdrawalFrequency: payload.withdrawalFrequency,
+            payoutInstallmentCount: payoutInstallmentCount,
           },
         });
         const fundTransaction = await tx.fundTransaction.create({
@@ -213,8 +226,27 @@ export class InvestmentController {
         return;
       }
       const payload: withdrawPreMaturityType = req.body;
+
+      const lastWithdrawalDetails = await prisma.withdrawalDetails.findFirst({
+        where: {
+          userInvestmentId: payload.userInvestmentId,
+        },
+        orderBy: {
+          initiatedAt: "desc",
+        },
+        take: 1,
+      });
+
+      if (lastWithdrawalDetails) {
+        if (lastWithdrawalDetails.installmentLeft === 0) {
+          res.status(400).json({ message: "No more installments left" });
+          return;
+        }
+      }
+
       const withdrawalDetails = await calculateWithdrawalDetails(
-        payload.userInvestmentId
+        payload.userInvestmentId,
+        lastWithdrawalDetails?.initiatedAt || undefined
       );
       if (!withdrawalDetails.success) {
         res.status(400).json({ message: withdrawalDetails.message });
@@ -504,78 +536,10 @@ export class InvestmentController {
     message: string;
   }> {
     try {
-      const withdrawalDetails = await calculateWithdrawalDetails(
-        userInvestmentId
-      );
-      if (!withdrawalDetails.success) {
-        return {
-          success: false,
-          message: withdrawalDetails.message,
-        };
-      }
-      if (!withdrawalDetails.data) {
-        return {
-          success: false,
-          message: "Withdrawal details not found",
-        };
-      }
-      const {
-        NetPayout,
-        exitExpense,
-        totalGain,
-        lockInStage,
-        expensePercentageApplied,
-      } = withdrawalDetails.data;
-      const transactions = await prisma.$transaction(async (tx) => {
-        // Update user balance by adding the net payout
-        const updatedUser = await tx.user.update({
-          where: { id: userId },
-          data: {
-            availableBalance: {
-              increment: NetPayout,
-            },
-          },
-        });
-
-        // Create credit transaction (auto-approved)
-        const fundTransaction = await tx.fundTransaction.create({
-          data: {
-            userId,
-            creditAmount: NetPayout,
-            type: TransactionType.DEPOSIT,
-            method: TransactionMethod.NEFT,
-            voucherType: VoucherType.BOOK_VOUCHER,
-            status: TransactionStatus.APPROVED,
-            balance: updatedUser.availableBalance,
-          },
-        });
-
-        // Create withdrawal details record (auto-completed)
-        const withdrawal = await tx.withdrawalDetails.create({
-          data: {
-            userId,
-            userInvestmentId: investmentPlanId,
-            type: WithdrawalType.MATURITY_EXIT,
-            grossAmount: totalGain,
-            netAmountPaid: NetPayout,
-            lockInStageAchieved: lockInStage,
-            expensePercentageApplied: expensePercentageApplied,
-            expenseAmountDeducted: exitExpense,
-            fundTransactionId: fundTransaction.id,
-            status: WithdrawalStatus.COMPLETED,
-            processedAt: new Date(),
-          },
-        });
-
-        // Update investment status
-        await tx.userInvestment.update({
-          where: { id: userInvestmentId },
-          data: { status: UserInvestmentStatus.MATURED },
-        });
-      });
+      // under process
       return {
         success: true,
-        message: "Maturity withdrawal completed successfully",
+        message: "Maturity withdrawal under process",
       };
     } catch (error) {
       console.error("Error in InvestmentController.withdrawMaturity:", error);
@@ -632,6 +596,46 @@ export class InvestmentController {
           },
           take: 1,
         });
+        if (withdrawalDetails) {
+          if (withdrawalDetails.installmentLeft === 0) {
+            console.log(
+              "Installment left is 0",
+              "Investment Closing under process"
+            );
+            const closing = await prisma.$transaction(async (tx) => {
+              await tx.userInvestment.update({
+                where: { id: investment.id },
+                data: { status: UserInvestmentStatus.MATURED },
+              });
+              const user = await tx.user.findUnique({
+                where: { id: userId },
+                select: { availableBalance: true },
+              });
+              const fundTransaction = await tx.fundTransaction.create({
+                data: {
+                  userId: userId,
+                  creditAmount: investment.investedAmount,
+                  type: TransactionType.DEPOSIT,
+                  method: TransactionMethod.NEFT,
+                  voucherType: VoucherType.BOOK_VOUCHER,
+                  status: TransactionStatus.APPROVED,
+                  balance: user?.availableBalance.plus(
+                    investment.investedAmount
+                  ),
+                },
+              });
+              const new_user = await tx.user.update({
+                where: { id: userId },
+                data: {
+                  availableBalance: {
+                    increment: investment.investedAmount,
+                  },
+                },
+              });
+            });
+            continue;
+          }
+        }
         if (!withdrawalDetails) {
           const firstInvestmentDate = investment.investmentDate;
           const nextPayoutDate = addDays(firstInvestmentDate, 90);
@@ -673,6 +677,7 @@ export class InvestmentController {
                   fundTransactionId: fundTransaction.id,
                   status: WithdrawalStatus.COMPLETED,
                   processedAt: new Date(),
+                  installmentLeft: investment.payoutInstallmentCount! - 1,
                 },
               });
             });
@@ -717,6 +722,7 @@ export class InvestmentController {
                   fundTransactionId: fundTransaction.id,
                   status: WithdrawalStatus.COMPLETED,
                   processedAt: new Date(),
+                  installmentLeft: withdrawalDetails.installmentLeft! - 1,
                 },
               });
             });
@@ -767,6 +773,46 @@ export class InvestmentController {
           },
           take: 1,
         });
+        if (withdrawalDetails) {
+          if (withdrawalDetails.installmentLeft === 0) {
+            console.log(
+              "Installment left is 0",
+              "Investment Closing under process"
+            );
+            const closing = await prisma.$transaction(async (tx) => {
+              await tx.userInvestment.update({
+                where: { id: investment.id },
+                data: { status: UserInvestmentStatus.MATURED },
+              });
+              const user = await tx.user.findUnique({
+                where: { id: userId },
+                select: { availableBalance: true },
+              });
+              const fundTransaction = await tx.fundTransaction.create({
+                data: {
+                  userId: userId,
+                  creditAmount: investment.investedAmount,
+                  type: TransactionType.DEPOSIT,
+                  method: TransactionMethod.NEFT,
+                  voucherType: VoucherType.BOOK_VOUCHER,
+                  status: TransactionStatus.APPROVED,
+                  balance: user?.availableBalance.plus(
+                    investment.investedAmount
+                  ),
+                },
+              });
+              const new_user = await tx.user.update({
+                where: { id: userId },
+                data: {
+                  availableBalance: {
+                    increment: investment.investedAmount,
+                  },
+                },
+              });
+            });
+            continue;
+          }
+        }
         if (!withdrawalDetails) {
           const firstInvestmentDate = investment.investmentDate;
           const nextPayoutDate = addDays(firstInvestmentDate, 365);
@@ -808,6 +854,7 @@ export class InvestmentController {
                   fundTransactionId: fundTransaction.id,
                   status: WithdrawalStatus.COMPLETED,
                   processedAt: new Date(),
+                  installmentLeft: investment.payoutInstallmentCount! - 1,
                 },
               });
             });
@@ -852,6 +899,7 @@ export class InvestmentController {
                   fundTransactionId: fundTransaction.id,
                   status: WithdrawalStatus.COMPLETED,
                   processedAt: new Date(),
+                  installmentLeft: withdrawalDetails.installmentLeft! - 1,
                 },
               });
             });
@@ -860,13 +908,10 @@ export class InvestmentController {
       }
       return {
         success: true,
-        message: "Quaterly payout checked and processed successfully",
+        message: "Annual payout checked and processed successfully",
       };
     } catch (error) {
-      console.error(
-        "Error in InvestmentController.processQuaterlyPayout:",
-        error
-      );
+      console.error("Error in InvestmentController.annualPayout:", error);
       return {
         success: false,
         message: "Internal server error",
